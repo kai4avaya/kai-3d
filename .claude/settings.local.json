@@ -16,7 +16,12 @@
       "Bash(git commit:*)",
       "Bash(git pull:*)",
       "Bash(git push:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(wrangler --version)",
+      "Bash(npx wrangler:*)",
+      "Bash(ls:*)",
+      "Bash(xargs grep:*)",
+      "Bash(git reset:*)"
     ]
   }
 }

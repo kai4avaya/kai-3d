@@ -210,8 +210,7 @@ function typeNext(){if(!typedEl)typedEl=document.getElementById('typed-text');if
 
 // === THEME TOGGLE ===
 var isDark=(function(){
-  var saved=localStorage.getItem('kai-theme');
-  if(saved)return saved==='dark';
+  try{var saved=localStorage.getItem('kai-theme');if(saved)return saved==='dark';}catch(e){}
   return !window.matchMedia('(prefers-color-scheme: light)').matches;
 })();
 (function(){
@@ -223,7 +222,7 @@ var isDark=(function(){
 })();
 function toggleTheme(){
   isDark=!isDark;
-  localStorage.setItem('kai-theme',isDark?'dark':'light');
+  try{localStorage.setItem('kai-theme',isDark?'dark':'light');}catch(e){}
   document.body.classList.toggle('light',!isDark);
   document.getElementById('theme-icon-sun').style.display=isDark?'none':'block';
   document.getElementById('theme-icon-moon').style.display=isDark?'block':'none';
@@ -410,8 +409,12 @@ function fbTTS(t){
   if(!speechSynthesis){toIdle();isSpeaking=false;showStopBtn(false);return;}
   speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.rate=0.95;
   var voices=speechSynthesis.getVoices();
-  var male=voices.find(function(v){return /david|daniel|james|mark/i.test(v.name)&&v.lang.startsWith('en');});
-  if(male)u.voice=male;
+  // Prefer high-quality Microsoft Online Natural voices (Edge), then Google, then any English male
+  var preferred=['Guy Online','Andrew Online','Brian Online','Eric Online','Christopher Online','Ryan Online','Google UK English Male'];
+  var voice=null;
+  for(var p=0;p<preferred.length&&!voice;p++){voice=voices.find(function(v){return v.name.indexOf(preferred[p])!==-1;});}
+  if(!voice)voice=voices.find(function(v){return /david|daniel|james|mark/i.test(v.name)&&v.lang.startsWith('en');});
+  if(voice)u.voice=voice;
   u.onstart=function(){toTalk();};
   u.onend=function(){clearTimeout(fadeTimer);isSpeaking=false;showStopBtn(false);toIdle();};
   u.onerror=function(){clearTimeout(fadeTimer);isSpeaking=false;showStopBtn(false);toIdle();};
