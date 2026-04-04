@@ -73,20 +73,32 @@
   .uz label{cursor:pointer;display:block;font-size:12px;color:#888;font-family:'JetBrains Mono',monospace}
   .uz label span{color:#6a9fd8}
   input[type="file"]{display:none}
-  /* Project video overlay */
-  #project-overlay{position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:140;width:170px;opacity:0;pointer-events:none;transition:opacity 0.4s ease;display:flex;flex-direction:column;gap:8px}
-  #project-overlay.visible{opacity:1;pointer-events:auto}
-  .proj-card{border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);box-shadow:0 2px 12px rgba(0,0,0,0.5);cursor:pointer;background:#111;transition:border-color 0.2s}
+  /* Project video overlay — desktop: scattered on sides, avoiding center face */
+  #project-overlay{position:absolute;inset:0;z-index:140;opacity:0;pointer-events:none;transition:opacity 0.4s ease}
+  #project-overlay.visible{opacity:1}
+  #project-overlay.visible .proj-card{pointer-events:auto}
+  .proj-card{position:absolute;width:150px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);box-shadow:0 2px 12px rgba(0,0,0,0.5);cursor:pointer;background:#111;transition:border-color 0.2s,opacity 0.4s ease}
   .proj-card:hover{border-color:rgba(100,160,220,0.3)}
-  .proj-card.active{border-color:rgba(100,160,220,0.4)}
   .proj-card video{width:100%;display:block}
   .proj-card .proj-info{padding:5px 8px}
-  .proj-card .proj-title{font-size:9px;color:#c8d8f0;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px}
+  .proj-card .proj-title{font-size:9px;color:#c8d8f0;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;text-decoration:none;display:block}
+  .proj-card .proj-title:hover{text-decoration:underline}
   .proj-card .proj-desc{font-size:8px;color:#666;font-family:'JetBrains Mono',monospace;line-height:1.3}
+  /* Position each card: staggered left/right, avoiding center */
+  .proj-card:nth-child(1){left:8%;top:50px}
+  .proj-card:nth-child(2){right:8%;top:38%}
+  .proj-card:nth-child(3){left:14%;bottom:8%}
   body.light .proj-card{border-color:rgba(0,0,0,0.1);box-shadow:0 2px 12px rgba(0,0,0,0.1);background:#f5f3ef}
   body.light .proj-card:hover{border-color:rgba(40,100,180,0.3)}
   body.light .proj-card .proj-title{color:#2a5a8a}
   body.light .proj-card .proj-desc{color:#888}
+  /* Mobile/small screens: stack vertically on right */
+  @media(max-width:640px){
+    #project-overlay{display:flex;flex-direction:column;gap:6px;right:8px;top:50%;left:auto;bottom:auto;transform:translateY(-50%)}
+    .proj-card{position:static;width:110px}
+    .proj-card .proj-title{font-size:8px}
+    .proj-card .proj-desc{font-size:7px}
+  }
   /* Theme toggle button */
   #theme-toggle{position:fixed;top:14px;right:20px;z-index:200;width:32px;height:32px;border-radius:3px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#666;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;box-shadow:2px 2px 0 rgba(0,0,0,0.3)}
   #theme-toggle:hover{color:#aaa;border-color:rgba(255,255,255,0.12)}
@@ -148,9 +160,9 @@
   </div>
   <canvas id="fx-canvas"></canvas>
   <div id="project-overlay">
-    <div class="proj-card" data-proj="ai-engineering" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><div class="proj-info"><div class="proj-title">AI Engineering</div><div class="proj-desc">Educating 1M AI engineers by 2030 — open-access TinyML curriculum</div></div></div>
-    <div class="proj-card" data-proj="arch-scholar" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><div class="proj-info"><div class="proj-title">Arch-Scholar</div><div class="proj-desc">Multi-agent AI system for automated scholarly paper review</div></div></div>
-    <div class="proj-card" data-proj="kaik-space" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><div class="proj-info"><div class="proj-title">KAIK.SPACE</div><div class="proj-desc">WebGL experiment lab — spatial augmentation &amp; 3D portfolio</div></div></div>
+    <div class="proj-card" data-proj="ai-engineering" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><div class="proj-info"><a class="proj-title" href="https://community.mlsysbook.ai" target="_blank" rel="noopener" onclick="event.stopPropagation()">AI Engineering</a><div class="proj-desc">Educating 1M AI engineers by 2030 — open-access TinyML curriculum</div></div></div>
+    <div class="proj-card" data-proj="arch-scholar" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><div class="proj-info"><a class="proj-title" href="https://edge.seas.harvard.edu/" target="_blank" rel="noopener" onclick="event.stopPropagation()">Arch-Scholar</a><div class="proj-desc">Multi-agent AI system for automated scholarly paper review</div></div></div>
+    <div class="proj-card" data-proj="kaik-space" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><div class="proj-info"><a class="proj-title" href="https://kaik.space" target="_blank" rel="noopener" onclick="event.stopPropagation()">KAIK.SPACE</a><div class="proj-desc">WebGL experiment lab — spatial augmentation &amp; 3D portfolio</div></div></div>
   </div>
 </div>
 <div id="chat-wrap">
@@ -197,9 +209,21 @@ var typedEl,typedIdx=0;
 function typeNext(){if(!typedEl)typedEl=document.getElementById('typed-text');if(typedIdx<=typedStr.length){typedEl.textContent=typedStr.slice(0,typedIdx);typedIdx++;setTimeout(typeNext,50+Math.random()*40);}else{setTimeout(function(){var c=document.querySelector('.cursor');if(c)c.style.display='none';},1500);}}
 
 // === THEME TOGGLE ===
-var isDark=true;
+var isDark=(function(){
+  var saved=localStorage.getItem('kai-theme');
+  if(saved)return saved==='dark';
+  return !window.matchMedia('(prefers-color-scheme: light)').matches;
+})();
+(function(){
+  if(!isDark){
+    document.body.classList.add('light');
+    document.getElementById('theme-icon-sun').style.display='block';
+    document.getElementById('theme-icon-moon').style.display='none';
+  }
+})();
 function toggleTheme(){
   isDark=!isDark;
+  localStorage.setItem('kai-theme',isDark?'dark':'light');
   document.body.classList.toggle('light',!isDark);
   document.getElementById('theme-icon-sun').style.display=isDark?'none':'block';
   document.getElementById('theme-icon-moon').style.display=isDark?'block':'none';
@@ -294,7 +318,7 @@ function renderASCII(){
   var rPr=0;if(revealStart>0){var el=now-revealStart;rPr=Math.min(1,el/3);rPr=rPr*rPr*(3-2*rPr);}
   var cx=w*.5,cy=h*.5,mD=Math.sqrt(cx*cx+cy*cy);
   var mCx=mouseUvX*w,mCy=(1-mouseUvY)*h,mR=w*0.1;
-  for(var row=0;row<rows;row++){for(var col=0;col<cols;col++){
+  for(var row=1;row<rows;row++){for(var col=0;col<cols;col++){
     var px=col*cW+cW*.5,py=row*cH+cH*.5;
     if(rPr<1){var dN=Math.sqrt((px-cx)*(px-cx)+(py-cy)*(py-cy))/mD;if(dN*0.3+cHash(col,row)*0.7>rPr)continue;}
     var sx=Math.floor((col/cols)*gW),sy=Math.floor((1-row/rows)*gH),idx=(sy*gW+sx)*4;
@@ -398,7 +422,7 @@ var KAI_PREFIX='[You are Kai. Now: Tech Lead at TALON Lab building mission-criti
 
 // Topic-based follow-up suggestions — pick 3 relevant to what was discussed
 var TOPIC_SUGGESTS={
-  ai:['How do you use AI daily?','Other projects you built?','Favorite AI tools?'],
+  ai:['Explain how you built this?','Other projects you built?','Favorite AI tools?'],
   talon:['What does TALON build?','Small language models?','Your team at TALON?'],
   harvard:['Harvard research focus?','Agentic AI examples?','Accessible UX approach?'],
   body:['What is bodyLITERATE?','Neurodivergent learning?','How many families?'],
@@ -502,6 +526,79 @@ function updateSuggestions(suggestions){
   });
 }
 
+// === CANNED FALLBACK RESPONSES ===
+var CANNED={
+  // Initial suggestions
+  'tell me about yourself':'Hey, I\'m Kai Kleinbard. I\'m an AI/ML Tech Lead at TALON Lab building mission-critical tech on edge devices. I also do research at Harvard\'s Edge Computing Lab, run bodyLITERATE helping neurodivergent learners, and I come from a background in dance and choreography.',
+  'what are you working on':'I\'m leading a team at TALON Lab right now, building mission-critical software that saves lives with small language models running on edge devices. High-stakes, high-impact work at the intersection of AI and the real world.',
+  'what have you built':'Three projects I\'m proud of: AI Engineering, an open-access TinyML curriculum to educate a million engineers globally. Arch-Scholar, a multi-agent AI system for scholarly paper review out of Harvard. And KAIK.SPACE, a WebGL experiment lab for browser-based 3D graphics.',
+  'what\'s on your mind today':'Lately I\'ve been thinking a lot about making AI more accessible, not just the tools themselves but the education around them. That\'s the thread connecting the AI Engineering initiative and my work with bodyLITERATE.',
+  'give me a hot take':'Small language models on edge devices are going to matter more than massive cloud models for most real-world use cases. Not every problem needs a billion parameters. Sometimes you just need something that runs offline and saves a life.',
+  // AI topic
+  'explain how you built this':'So this site is actually me as a 3D avatar. I started by generating a 3D model of myself using an AI model, then brought it into Blender where I rigged it with bones for talking and body movement. I set up some simple animation frames for idle and speaking states, exported it as a GLB, and dropped it straight into a single HTML file. The rendering runs on Three.js with custom WebGL shaders for the ASCII, glitch, and engrave effects. The whole thing, including the AI chat and text-to-speech, is one file with no build step.',
+  'other projects you built':'Outside my main three, I\'ve shipped full-stack apps with Langchain and NextJS, fine-tuned GPT models for Stability AI, co-founded Study Duck with an NLP pipeline on AWS, and built WCAG-compliant data visualization dashboards with d3.js.',
+  'favorite ai tools':'Claude Code is my daily driver. The agentic workflow just clicks with how I think. Gemini CLI for quick iterations, Mermaid AI for diagramming architecture visually. Honestly, I also love any platform with a generous free tier. You\'d be surprised how much you can ship without spending a dime if you\'re resourceful.',
+  // TALON topic
+  'what does talon build':'TALON Lab builds mission-critical tech that saves lives. We deploy small language models on edge devices, so AI runs in real time even where there\'s no cloud connectivity. When the stakes are that high, every decision counts.',
+  'small language models':'At TALON we focus on small language models that run on edge devices, designed for disconnected environments where lives depend on real-time inference. It\'s a completely different challenge from scaling up. Every parameter has to earn its place.',
+  'your team at talon':'I lead a team of developers at TALON Lab focused on mission-critical software. Reliability isn\'t optional in our world. The team is sharp, the work is purposeful, and every deployment genuinely matters.',
+  // Harvard topic
+  'harvard research focus':'At Harvard\'s Edge Computing Lab, I sit at the intersection of complex AI systems and human-centric design. I build agentic systems that can reason autonomously while making sure they\'re actually usable through intuitive, accessible interfaces.',
+  'agentic ai examples':'Arch-Scholar is probably the best example. It\'s a multi-agent framework where specialized agents review research papers in parallel using a dragonfly-eyes approach. Each agent tackles a different dimension of analysis at the same time.',
+  'accessible ux approach':'Powerful AI is useless if people can\'t actually use it. At Harvard, I design human-first interfaces that make agentic systems intuitive for everyone, not just engineers. Accessibility isn\'t a feature I add later. It\'s where I start.',
+  // bodyLITERATE topic
+  'what is bodyliterate':'bodyLITERATE is an organization I founded to support neurodivergent individuals. I lead a team of over twenty learning specialists working with hundreds of families across the US, blending data-driven insights with embodied learning.',
+  'neurodivergent learning':'At bodyLITERATE we focus on executive functions like organization, self-regulation, and attention through embodied learning. We run data pipelines to surface learning patterns, always with strict ethics around privacy and data.',
+  'how many families':'Hundreds of families across the United States. bodyLITERATE started as a small research initiative and has grown into a full operation with over twenty learning specialists all dedicated to neurodivergent support.',
+  // Dance topic
+  'dance and tech connection':'Dance shaped how I think about systems. How bodies process information, how attention flows, how embodied experience drives understanding. That lens directly influences how I design accessible AI and think about human-computer interaction.',
+  'bill t. jones experience':'I performed in Bill T. Jones\' premiere of Deep Blue Sea at the Park Avenue Armory in 2021. Working with one of the most important choreographers of our time was incredible. The piece explored collective identity and what it means to be part of a larger whole.',
+  'creature in the city':'Creature in the City was a dance series I made from 2002 to 2021. Each piece translated urban energy through the body: traffic patterns, subway rhythms, pedestrian flow, cultural collisions. The city itself became the choreography.',
+  // Education topic
+  'teaching philosophy':'Learning should be embodied and accessible. Whether I\'m teaching algorithms at UPenn or coaching executive functions through bodyLITERATE, the principle stays the same: meet learners where they are and build from there.',
+  'study duck story':'Study Duck was a startup I co-founded. We built an AWS-based NLP pipeline for educational content and trained a deep learning model that hit a 500% speed improvement. The team went through Create-X, Wharton VIP, and Microsoft for Startups.',
+  'upenn experience':'I was a TA for graduate-level algorithms and discrete math at UPenn, working with over a thousand students. That experience really shaped how I think about making complex ideas accessible to people from all kinds of backgrounds.',
+  // Stack topic
+  'your tech stack':'Python and PyTorch for ML. React and NextJS on the frontend. AWS and Azure for cloud infrastructure. Three.js for 3D in the browser. Langchain and Llama Index for LLM apps. I pick tools based on the problem, not brand loyalty.',
+  'favorite framework':'NextJS for web apps, hands down. PyTorch for anything ML. And Three.js for 3D in the browser, which is actually what powers this site you\'re looking at right now.',
+  'aws or azure':'Both, honestly. AWS for heavy compute and NLP pipelines. Azure for parts of the bodyLITERATE stack. Google Cloud for GPU scheduling. The right cloud is whatever fits the workload.',
+  // Project topic
+  'tell me about ai engineering':'AI Engineering is a global initiative out of the Harvard Edge AI Lab. We\'re building an open-access curriculum, including the MLSysBook, TinyTorch labs where you rebuild PyTorch from scratch, and hardware kits. The goal is to educate one million AI engineers by 2030, especially in under-resourced regions.',
+  'what is arch-scholar':'Arch-Scholar is a multi-agent AI system I built at Harvard for automated scholarly paper review. It uses what we call a dragonfly-eyes approach, where multiple specialized agents analyze research simultaneously using Retrieval-Augmented Generation against a massive corpus of papers.',
+  'show me kaik.space':'KAIK.SPACE is my creative portfolio and WebGL experiment lab. I use Three.js, React, and Anime.js to push what\'s possible with browser-based 3D, from cloth animations and spatial augmentation to AI-powered interactive components.',
+  // General topic
+  'biggest challenge':'Balancing depth and breadth. I care deeply about AI, education, accessibility, and art, and the challenge is giving each the focus it deserves while finding the connections between them. TALON Lab is where that convergence feels strongest right now.',
+  'what inspires you':'The people I work with. Neurodivergent learners finding new ways to understand the world. Engineers who refuse to accept the status quo. Dancers who turn cities into choreography. Inspiration is everywhere when you\'re paying attention.',
+  'what drives you':'A simple belief: technology should serve everyone, not just the privileged few. That\'s why I build accessible AI, educate engineers globally, and support neurodivergent learners. Impact over hype, every time.'
+};
+var CANNED_SUFFIX='\n\n(AI credits exhausted for today — this is a pre-written response.)';
+
+function getCannedKey(message){
+  var msg=message.toLowerCase().trim().replace(/[?!.]+$/,'');
+  if(CANNED[msg])return msg;
+  for(var key in CANNED){
+    var words=key.split(' ').filter(function(w){return w.length>3;});
+    var hits=words.filter(function(w){return msg.indexOf(w)!==-1;}).length;
+    if(hits>=words.length*0.6)return key;
+  }
+  return null;
+}
+
+function fakeStream(text,textEl,log){
+  return new Promise(function(resolve){
+    var i=0;
+    function tick(){
+      if(i>=text.length){resolve();return;}
+      var chunk=Math.min(i+4+Math.floor(Math.random()*5),text.length);
+      textEl.textContent=text.slice(0,chunk);
+      log.scrollTop=log.scrollHeight;
+      i=chunk;
+      setTimeout(tick,8+Math.random()*12);
+    }
+    tick();
+  });
+}
+
 async function streamAI(message){
   // Hide any previous project overlay on new message
   hideProjects();
@@ -514,36 +611,57 @@ async function streamAI(message){
   log.appendChild(aiMsg);log.scrollTop=log.scrollHeight;
   var textEl=aiMsg.querySelector('.ai-text');
 
-  // Detect if asking about projects — inject project info if so
+  // Detect if asking about projects
   var askingProjects=isProjectQuestion(message);
-  var payload=KAI_PREFIX;
-  if(askingProjects){
-    payload+='[Projects: AI Engineering (1M AI engineers, TinyML), Arch-Scholar (AI paper review), KAIK.SPACE (WebGL 3D lab).] ';
-  }
-  payload+=message;
 
-  // Ensure under 500 char limit
-  if(payload.length>498)payload=payload.slice(0,498);
+  // Check for canned response first
+  var cannedKey=getCannedKey(message);
+  var full='';
 
-  var resp=await fetch(AI_WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:payload})});
-  if(!resp.ok)throw new Error('AI error '+resp.status);
-  var reader=resp.body.getReader();var decoder=new TextDecoder();var full='';var buf='';
-  while(true){
-    var chunk=await reader.read();if(chunk.done)break;
-    buf+=decoder.decode(chunk.value,{stream:true});
-    var lines=buf.split('\n');buf=lines.pop();
-    for(var i=0;i<lines.length;i++){
-      var line=lines[i].trim();if(!line.startsWith('data: ')||line==='data: [DONE]')continue;
-      try{var d=JSON.parse(line.slice(6));if(d.response)full+=d.response;}catch(e){}
+  if(cannedKey){
+    // Use canned response directly — no AI call, no warning
+    await fakeStream(CANNED[cannedKey],textEl,log);
+    full=CANNED[cannedKey];
+  }else{
+    // Custom question — try live AI
+    var failed=false;
+    try{
+      var payload=KAI_PREFIX;
+      if(askingProjects)payload+='[Projects: AI Engineering (1M AI engineers, TinyML), Arch-Scholar (AI paper review), KAIK.SPACE (WebGL 3D lab).] ';
+      payload+=message;
+      if(payload.length>498)payload=payload.slice(0,498);
+      var resp=await fetch(AI_WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:payload})});
+      if(!resp.ok)throw new Error('AI error '+resp.status);
+      var reader=resp.body.getReader();var decoder=new TextDecoder();var buf='';
+      while(true){
+        var chunk=await reader.read();if(chunk.done)break;
+        buf+=decoder.decode(chunk.value,{stream:true});
+        var lines=buf.split('\n');buf=lines.pop();
+        for(var i=0;i<lines.length;i++){
+          var line=lines[i].trim();if(!line.startsWith('data: ')||line==='data: [DONE]')continue;
+          try{var d=JSON.parse(line.slice(6));if(d.response)full+=d.response;}catch(e){}
+        }
+        textEl.textContent=full;log.scrollTop=log.scrollHeight;
+      }
+    }catch(e){
+      console.warn('AI stream error, using fallback:',e);
+      failed=true;
     }
-    textEl.textContent=full;log.scrollTop=log.scrollHeight;
+
+    // Fallback for custom questions only — show credits warning
+    if(failed||!full.trim()){
+      var generic='I\'m Kai Kleinbard — AI/ML engineer, educator, and dancer. I lead a team at TALON Lab building mission-critical tech, do research at Harvard, and founded bodyLITERATE to support neurodivergent learners. Try one of the suggested questions for more detail.'+CANNED_SUFFIX;
+      await fakeStream(generic,textEl,log);
+      full=generic;
+    }
   }
+
   var cur=aiMsg.querySelector('.ai-cursor');if(cur)cur.remove();
   textEl.textContent=full.trim();
   updateSuggestions(pickSuggestions(full,message));
 
-  // Show project cards if user asked about projects
-  if(askingProjects)showProjects();
+  // Show project cards if relevant
+  if(askingProjects||isProjectQuestion(full))showProjects();
 
   return full.trim();
 }
@@ -570,8 +688,8 @@ async function sendMessage(){
   setBusy(true);
   var aiText='';
   try{aiText=await streamAI(t);}catch(e){console.warn('AI stream error:',e);aiText='';}
-  if(!autoSpeak){setBusy(false);return;}
-  var speakText=aiText||t;
+  if(!autoSpeak||!aiText){setBusy(false);return;}
+  var speakText=aiText.replace(/\n*\(AI credits.*?\)$/,'').trim();
   if(!speakText.trim()){setBusy(false);return;}
   isSpeaking=true;
   showStopBtn(true);
