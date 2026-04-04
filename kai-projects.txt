@@ -1,0 +1,28 @@
+Kai Kleinbard — Projects
+========================
+
+## AI Engineering
+Democratizing AI systems for everyone, everywhere.
+Global initiative supported by Harvard Edge AI Computer Lab and partners (Arduino, Seeed).
+Bridges the skills gap in high-performance computing with an end-to-end open-access curriculum.
+- Goal: Educate one million AI Engineers by 2030
+- Curriculum: MLSysBook (ML Systems textbook), TinyTorch labs (rebuilding PyTorch from scratch), hardware kits
+- Community: Monthly Show & Tell forums, Applied AI Engineering Workshops for real-world TinyML projects
+- Accessibility: Focused on under-resourced regions, open-source tools for ML on low-power microcontrollers
+
+## KAIK.SPACE
+High-fidelity spatial augmentation and WebGL experiment lab.
+Creative portfolio and experimental playground pushing browser-based 3D graphics boundaries.
+- Visual Tech Stack: Three.js, React + Vite, Anime.js — cloth animations, parallax effects, gradients
+- Experimental Features: Spatial augmentation, WebGL video distortions, WebGL image effects
+- Interactive Components: AI-enabled live chat, snap-to-fit UI experiments
+- Performance: Lenis smooth scrolling, Framer Motion fluid transitions across 3D scenes
+
+## Arch-Scholar
+Agentic AI research system for scholarly paper review.
+Developed at Harvard Edge AI Computer Lab. Multi-agent framework automating academic peer-review.
+Uses "dragonfly eyes" approach — multiple specialized agents analyzing research simultaneously.
+- Architecture: Hierarchical multi-agent system, primary agents + sub-agents in parallel
+- Scholarly RAG: Retrieval-Augmented Generation against massive research corpus
+- Automated Reviewing: Rigorous scholarly reviews for academic festivals and conferences
+- Parallel Synthesis: Maps, synthesizes, monitors multiple research narratives at once

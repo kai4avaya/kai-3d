@@ -1,0 +1,108 @@
+Kai Kleinbard — Bio & Background
+==================================
+
+CURRENT FOCUS: AI / ML | Education Technology
+
+EXPERIENCE
+----------
+
+ML / AI Engineer | Tech Lead
+TALON Lab · Full-time
+Jan 2026 - Present
+- Leading a team of developers to build mission critical software
+- Small language models
+- Edge devices
+
+Research Software Engineer
+Harvard Edge Computing Lab · Part-time
+Jan 2021 - Present
+- Operates at the intersection of complex AI systems and human-centric design
+- Developing Agentic Systems: Engineering sophisticated AI agents capable of complex reasoning, planning, and autonomous task execution
+- Creating Accessible UX: Designing intuitive, accessible, human-first interfaces that make powerful AI systems usable for a diverse range of users
+
+Software Engineer and Data Scientist
+Self Employed · Freelance
+May 2018 - Present
+- Fine-tuned GPT model on GPUs to improve LLM prompts for Stability AI increasing accuracy by 80%
+- Scraped, cleaned and analyzed 1000s GB of data using numpy, pytorch; created WCAG compliant accessible data visualizations and dashboards using d3.js (javascript, html, css, react)
+- Set up GPUs for parallel multi-node work via task scheduling through Google Cloud
+- Synthetically creating data to train deep learning models
+- Built end to end products using Langchain, Llama Index and NextJS
+- Full featured website handling over a million requests through AWS, AWS Cognito
+
+Founder | Educator
+bodyLITERATE · Full-time
+Jan 2020 - Present
+- Spearheads a team of over twenty learning specialists, empowering neurodivergent individuals
+- Architects a robust data pipeline uncovering pivotal learning patterns in somatics, human attention/executive function skills, and AI
+- Maintains strict ethics around data and privacy
+- Works with hundreds of families across the United States
+- Full stack web application (WCAG guidelines): React, NextJS, Azure, OpenAI
+
+Full Stack Software Engineer
+Avaya
+Feb 2024 - 2026
+- New York City Metropolitan Area
+
+Studyduck Co-founder
+Study Duck
+Apr 2021 - Aug 2023
+- AWS NLP pipeline via Sagemaker, EC2, Lambda — handled 100% traffic increase in a month
+- Built Full Stack web app in under one month using Material and Carbon Design Systems, React, NodeJS, Python
+- Trained deep learning model for 500% increase in speed and accuracy
+- Led engineering team through three accelerators: Create-X, Wharton VIP, Microsoft for Startups
+
+Teaching Assistant for Algorithms and Computation
+University of Pennsylvania · Part-time
+Dec 2020 - Oct 2021
+- Assessment of student work for over 1000 students
+- Course material review and curriculum design for graduate level algorithms
+- Courses: 596 Algorithms, 592 Discrete Mathematics
+
+Performer
+Bill T. Jones/Arnie Zane Dance Company, Inc. · Contract
+May 2021 - Sep 2021
+- Performer for choreographer Bill T. Jones' premier of Deep Blue Sea at the Park Avenue Armory
+
+Founder and Co-director
+Institute For Playful Beings · Part-time
+Jul 2014 - Jul 2021
+- Community-based learning center with over 100 participating families
+- Donation-based system supporting equitable access
+- Curriculum based on free open play using Gamification, Play Theory
+
+Choreographer and Artist
+Jan 2002 - Jul 2021
+- Creating dance pieces incorporating dynamics of the city: traffic patterns, subway motions, cultural interactions, pedestrian movement, grid-lines
+- "Creature in the City" series — becoming a vessel to translate the city through the body
+
+Researcher
+bodyLITERATE Research Initiative
+Jan 2008 - Jul 2014
+- Collection of practicing artists, educators and researchers dedicated to embodied and emergent learning
+- Focus on helping young learners (K-12) succeed through creative practices and academic support
+
+Director
+Tutorfish · Full-time
+Jan 2004 - 2010
+- One-on-one and group math and writing instruction
+
+Mathematics Teacher
+1199 National Benefit Fund
+Jan 2006 - 2008
+- Coordinating lesson plans to support health workers advancing in their field
+
+Teacher
+Sylvan Learning Centers
+2003 - 2006
+- Teaching all ages in academic enrichment
+
+KEY THEMES
+----------
+- AI/ML engineering with focus on accessibility and education
+- Neurodivergent learner support (ADHD coaching, executive functions)
+- Edge computing and small language models
+- Full stack development (React, NextJS, Python, AWS, Azure)
+- Embodied learning, somatics, movement/dance
+- Data ethics and privacy
+- Human-centric AI design

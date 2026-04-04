@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K.AI</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  @font-face{font-family:'GeistPixel';src:url('https://cdn.jsdelivr.net/npm/geist@1.7.0/dist/fonts/geist-pixel/GeistPixel-Triangle.woff2') format('woff2');font-weight:100 900;font-display:swap}
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0a0f;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,0.02) 0px,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 4px);color:#e0ddd4;font-family:'JetBrains Mono',monospace;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+  #viewport{flex:1;position:relative;overflow:hidden}
+  #fx-canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;pointer-events:none}
+  /* Floating header */
+  #header{position:absolute;top:0;left:0;right:0;z-index:150;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;background:transparent;pointer-events:none}
+  #header>*{pointer-events:auto}
+  #header h1{font-family:'GeistPixel','JetBrains Mono',monospace;font-size:24px;font-weight:700;letter-spacing:0.3px;color:#ffffff;opacity:1;padding:4px 8px}
+  .cursor{display:inline-block;width:8px;height:14px;background:#6a9fd8;vertical-align:middle;margin-left:2px;animation:blink-cursor 0.7s step-end infinite}
+  @keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
+  #chat-wrap{z-index:20;background:#0c0c12;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,0.02) 0px,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 4px);border-top:1px solid rgba(255,255,255,0.06);width:100%;flex-shrink:0}
+  #chat-bar{padding:10px 16px 14px;max-width:680px;margin:0 auto}
+  #mode-row{display:flex;gap:5px;margin-bottom:8px;align-items:center}
+  #mode-row button{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#666;padding:4px 12px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:10px;cursor:pointer;transition:all 0.2s;letter-spacing:0.3px;text-transform:lowercase;box-shadow:2px 2px 0 rgba(0,0,0,0.3)}
+  #mode-row button:hover{color:#aaa;border-color:rgba(255,255,255,0.12)}
+  #mode-row button:active{box-shadow:none;transform:translate(2px,2px)}
+  #mode-row button.on{color:#c8d8f0;background:rgba(80,130,200,0.08);border-color:rgba(80,130,200,0.2)}
+  .mode-spacer{flex:1}
+  /* Settings gear — raw icon, slides left to reveal */
+  #settings-area{display:flex;align-items:center;gap:0;position:relative}
+  #gear{color:#444;cursor:pointer;transition:all 0.35s ease;display:flex;align-items:center;justify-content:center;width:22px;height:22px}
+  #gear:hover{color:#888}
+  #gear svg{width:18px;height:18px;fill:currentColor;transition:transform 0.35s ease}
+  #gear.open svg{transform:rotate(90deg)}
+  #settings-drawer{display:flex;align-items:center;gap:10px;overflow:hidden;max-width:0;opacity:0;transition:max-width 0.35s ease,opacity 0.25s ease,margin 0.35s ease;margin-left:0}
+  #settings-drawer.open{max-width:360px;opacity:1;margin-left:10px}
+  .s-row select{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#aaa;font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 4px;border-radius:2px;outline:none;cursor:pointer}
+  .s-row{display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .s-row label{font-size:9px;color:#444;text-transform:lowercase;letter-spacing:0.5px}
+  .s-row input[type="range"]{width:50px;height:2px;-webkit-appearance:none;background:rgba(255,255,255,0.1);border-radius:1px;outline:none}
+  .s-row input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:8px;height:8px;border-radius:2px;background:#6a9fd8;cursor:pointer}
+  #chat-log{margin-bottom:8px;max-height:100px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.5;padding:0 2px;scrollbar-width:thin;scrollbar-color:rgba(100,160,220,0.2) transparent;display:none}
+  #chat-log.visible{display:block}
+  .chat-msg{margin-bottom:6px}
+  .chat-msg.user{color:#666;opacity:0.7}
+  .chat-msg.user::before{content:'> ';color:#555}
+  .chat-msg.ai{color:#a0b8d0}
+  .chat-msg .ai-cursor{display:inline-block;width:6px;height:12px;background:#6a9fd8;vertical-align:middle;margin-left:2px;animation:blink-cursor 0.7s step-end infinite}
+  #suggestions{display:flex;gap:5px;margin-bottom:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  #suggestions::-webkit-scrollbar{display:none}
+  .suggestion{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);color:#666;padding:5px 12px;border-radius:3px;font-size:11px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all 0.15s;white-space:nowrap;flex-shrink:0;box-shadow:2px 2px 0 rgba(0,0,0,0.3)}
+  .suggestion:hover{color:#c8d8f0;background:rgba(80,130,200,0.06);border-color:rgba(80,130,200,0.2)}
+  .suggestion:active{box-shadow:none;transform:translate(2px,2px)}
+  #input-wrap{position:relative}
+  #chat-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#e0ddd4;padding:11px 120px 11px 14px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;transition:border-color 0.2s;resize:none;line-height:1.4;height:50px;box-shadow:2px 2px 0 rgba(0,0,0,0.3)}
+  #chat-input:focus{border-color:rgba(100,160,220,0.3)}
+  #chat-input::placeholder{color:#444}
+  #input-actions{position:absolute;right:6px;bottom:7px;display:flex;gap:2px;align-items:center}
+  .act-btn{width:32px;height:32px;border-radius:3px;border:none;background:transparent;color:#555;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+  .act-btn:hover{background:rgba(100,160,220,0.08);color:#a0c4e8}
+  .act-btn.on{color:#6a9fd8}
+  .act-btn.listening{background:rgba(217,119,87,0.15);color:#e8a88a;animation:pulse 0.6s ease-in-out infinite alternate}
+  .act-btn.stopping{color:#d97757}
+  .act-btn svg{width:16px;height:16px;fill:currentColor}
+  @keyframes pulse{from{opacity:.6;transform:scale(.9)}to{opacity:1;transform:scale(1.1)}}
+  #overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,10,15,0.97);z-index:100;transition:opacity 0.5s}
+  #overlay.hidden{opacity:0;pointer-events:none}
+  #overlay h1{font-family:'GeistPixel','JetBrains Mono',monospace;font-size:24px;font-weight:500;margin-bottom:4px}
+  #overlay p{color:#666;font-size:11px;margin-bottom:24px}
+  .uz{width:340px;max-width:85vw;padding:32px 20px;border:1.5px dashed rgba(255,255,255,0.12);border-radius:3px;text-align:center;cursor:pointer;transition:all 0.3s;box-shadow:2px 2px 0 rgba(0,0,0,0.3)}
+  .uz:hover{border-color:rgba(100,160,220,0.4);background:rgba(100,160,220,0.03)}
+  .uz:active{box-shadow:none;transform:translate(2px,2px)}
+  .uz label{cursor:pointer;display:block;font-size:12px;color:#888;font-family:'JetBrains Mono',monospace}
+  .uz label span{color:#6a9fd8}
+  input[type="file"]{display:none}
+  /* Project video overlay */
+  #project-overlay{position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:140;width:170px;opacity:0;pointer-events:none;transition:opacity 0.4s ease;display:flex;flex-direction:column;gap:8px}
+  #project-overlay.visible{opacity:1;pointer-events:auto}
+  .proj-card{border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);box-shadow:0 2px 12px rgba(0,0,0,0.5);cursor:pointer;background:#111;transition:border-color 0.2s}
+  .proj-card:hover{border-color:rgba(100,160,220,0.3)}
+  .proj-card.active{border-color:rgba(100,160,220,0.4)}
+  .proj-card video{width:100%;display:block}
+  .proj-card .proj-info{padding:5px 8px}
+  .proj-card .proj-title{font-size:9px;color:#c8d8f0;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px}
+  .proj-card .proj-desc{font-size:8px;color:#666;font-family:'JetBrains Mono',monospace;line-height:1.3}
+  body.light .proj-card{border-color:rgba(0,0,0,0.1);box-shadow:0 2px 12px rgba(0,0,0,0.1);background:#f5f3ef}
+  body.light .proj-card:hover{border-color:rgba(40,100,180,0.3)}
+  body.light .proj-card .proj-title{color:#2a5a8a}
+  body.light .proj-card .proj-desc{color:#888}
+  /* Theme toggle button */
+  #theme-toggle{position:fixed;top:14px;right:20px;z-index:200;width:32px;height:32px;border-radius:3px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#666;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;box-shadow:2px 2px 0 rgba(0,0,0,0.3)}
+  #theme-toggle:hover{color:#aaa;border-color:rgba(255,255,255,0.12)}
+  #theme-toggle:active{box-shadow:none;transform:translate(2px,2px)}
+  #theme-toggle svg{width:16px;height:16px;fill:currentColor}
+  /* Viewport texture backdrop */
+  #viewport-bg{position:absolute;inset:0;z-index:0;background:#0a0a0f;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,0.02) 0px,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 4px)}
+  /* === LIGHT MODE === */
+  body.light{background:#f0ede8;background-image:repeating-linear-gradient(0deg,rgba(0,0,0,0.03) 0px,rgba(0,0,0,0.03) 1px,transparent 1px,transparent 4px);color:#1a1a1a}
+  body.light #viewport-bg{background:#f0ede8;background-image:repeating-linear-gradient(0deg,rgba(0,0,0,0.03) 0px,rgba(0,0,0,0.03) 1px,transparent 1px,transparent 4px)}
+  body.light #header h1{color:#1a1a1a;background:rgba(240,237,232,0.85);border-radius:3px}
+  body.light .cursor{background:#3a6fa8}
+  body.light #chat-wrap{background:#e8e5e0;background-image:repeating-linear-gradient(0deg,rgba(0,0,0,0.03) 0px,rgba(0,0,0,0.03) 1px,transparent 1px,transparent 4px);border-top:1px solid rgba(0,0,0,0.08)}
+  body.light #mode-row button{background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.1);color:#888;box-shadow:2px 2px 0 rgba(0,0,0,0.08)}
+  body.light #mode-row button:hover{color:#555;border-color:rgba(0,0,0,0.2)}
+  body.light #mode-row button.on{color:#2a5a8a;background:rgba(40,100,180,0.08);border-color:rgba(40,100,180,0.25)}
+  body.light #gear{color:#999}
+  body.light #gear:hover{color:#555}
+  body.light .s-row label{color:#999}
+  body.light .s-row input[type="range"]{background:rgba(0,0,0,0.1)}
+  body.light .suggestion{background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.1);color:#888;box-shadow:2px 2px 0 rgba(0,0,0,0.06)}
+  body.light .suggestion:hover{color:#2a5a8a;background:rgba(40,100,180,0.06);border-color:rgba(40,100,180,0.2)}
+  body.light #chat-input{background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.1);color:#1a1a1a;box-shadow:2px 2px 0 rgba(0,0,0,0.06)}
+  body.light #chat-input:focus{border-color:rgba(40,100,180,0.3)}
+  body.light #chat-input::placeholder{color:#aaa}
+  body.light .act-btn{color:#999}
+  body.light .act-btn:hover{background:rgba(40,100,180,0.08);color:#3a6fa8}
+  body.light .act-btn.on{color:#3a6fa8}
+  body.light #chat-log .chat-msg.ai{color:#3a5a7a}
+  body.light .chat-msg .ai-cursor{background:#3a6fa8}
+  body.light #overlay{background:rgba(240,237,232,0.97)}
+  body.light #overlay h1{color:#1a1a1a}
+  body.light #overlay p{color:#888}
+  body.light .uz{border-color:rgba(0,0,0,0.12);box-shadow:2px 2px 0 rgba(0,0,0,0.06)}
+  body.light .uz:hover{border-color:rgba(40,100,180,0.4);background:rgba(40,100,180,0.03)}
+  body.light .uz label{color:#666}
+  body.light .uz label span{color:#3a6fa8}
+  body.light #theme-toggle{border-color:rgba(0,0,0,0.1);background:rgba(0,0,0,0.04);color:#888;box-shadow:2px 2px 0 rgba(0,0,0,0.06)}
+  body.light #theme-toggle:hover{color:#555;border-color:rgba(0,0,0,0.2)}
+</style>
+</head>
+<body>
+<button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+  <svg id="theme-icon-sun" viewBox="0 0 24 24" style="display:none"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+  <svg id="theme-icon-moon" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+</button>
+<div id="viewport">
+  <div id="viewport-bg"></div>
+  <div id="header">
+    <h1><span id="typed-text"></span><span class="cursor"></span></h1>
+  </div>
+  <div id="overlay" class="hidden">
+    <h1>load avatar</h1>
+    <p>animated .glb from blender</p>
+    <div class="uz" onclick="document.getElementById('fi').click()">
+      <label>click to load <span>.glb file</span></label>
+    </div>
+    <input type="file" id="fi" accept=".glb,.gltf">
+  </div>
+  <canvas id="fx-canvas"></canvas>
+  <div id="project-overlay">
+    <div class="proj-card" data-proj="ai-engineering" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><div class="proj-info"><div class="proj-title">AI Engineering</div><div class="proj-desc">Educating 1M AI engineers by 2030 — open-access TinyML curriculum</div></div></div>
+    <div class="proj-card" data-proj="arch-scholar" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><div class="proj-info"><div class="proj-title">Arch-Scholar</div><div class="proj-desc">Multi-agent AI system for automated scholarly paper review</div></div></div>
+    <div class="proj-card" data-proj="kaik-space" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><div class="proj-info"><div class="proj-title">KAIK.SPACE</div><div class="proj-desc">WebGL experiment lab — spatial augmentation &amp; 3D portfolio</div></div></div>
+  </div>
+</div>
+<div id="chat-wrap">
+<div id="chat-bar">
+  <div id="mode-row">
+    <button class="on" id="mode-ascii" onclick="setMode('ascii')">ASCII</button>
+    <button id="mode-glitch" onclick="setMode('glitch')">Glitch</button>
+    <button id="mode-engrave" onclick="setMode('engrave')">Engrave</button>
+    <div class="mode-spacer"></div>
+    <div id="settings-area">
+      <div id="gear" onclick="toggleSettings()" title="Settings">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 00-.48-.41h-3.84a.48.48 0 00-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z"/></svg>
+      </div>
+      <div id="settings-drawer">
+        <div class="s-row"><label>fx</label><input type="range" min="0" max="100" value="50" oninput="fxAmount=this.value/100"></div>
+        <div class="s-row"><label>light</label><input type="range" min="20" max="250" value="100" oninput="setL(this.value)"></div>
+        <div class="s-row"><label>voice</label><select onchange="ttsVoice=this.value"><option value="orion">orion</option><option value="arcas">arcas</option><option value="helios">helios</option><option value="orpheus">orpheus</option><option value="angus">angus</option><option value="perseus">perseus</option><option value="stella">stella</option><option value="luna">luna</option><option value="athena">athena</option><option value="hera">hera</option></select></div>
+      </div>
+    </div>
+  </div>
+  <div id="suggestions">
+    <div class="suggestion" onclick="useSug(this)">Tell me about yourself</div>
+    <div class="suggestion" onclick="useSug(this)">What are you working on?</div>
+    <div class="suggestion" onclick="useSug(this)">What have you built?</div>
+    <div class="suggestion" onclick="useSug(this)">What's on your mind today?</div>
+    <div class="suggestion" onclick="useSug(this)">Give me a hot take</div>
+  </div>
+  <div id="chat-log"></div>
+  <div id="input-wrap">
+    <textarea id="chat-input" rows="2" placeholder="say something..."></textarea>
+    <div id="input-actions">
+      <button class="act-btn on" id="speak-btn" onclick="toggleAutoSpeak()" title="Auto-speak"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+      <button class="act-btn" id="mic-btn" onclick="toggleMic()" title="Voice"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/></svg></button>
+      <button class="act-btn" id="send-btn" onclick="sendOrStop()" title="Send"><svg id="send-icon" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg><svg id="stop-icon" viewBox="0 0 24 24" style="display:none"><path d="M6 6h12v12H6z"/></svg></button>
+    </div>
+  </div>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// === TYPING EFFECT ===
+var typedStr="Hi, I'm Kai Kleinbard. Ask me anything.";
+var typedEl,typedIdx=0;
+function typeNext(){if(!typedEl)typedEl=document.getElementById('typed-text');if(typedIdx<=typedStr.length){typedEl.textContent=typedStr.slice(0,typedIdx);typedIdx++;setTimeout(typeNext,50+Math.random()*40);}else{setTimeout(function(){var c=document.querySelector('.cursor');if(c)c.style.display='none';},1500);}}
+
+// === THEME TOGGLE ===
+var isDark=true;
+function toggleTheme(){
+  isDark=!isDark;
+  document.body.classList.toggle('light',!isDark);
+  document.getElementById('theme-icon-sun').style.display=isDark?'none':'block';
+  document.getElementById('theme-icon-moon').style.display=isDark?'block':'none';
+  if(scene)scene.background=new THREE.Color(isDark?0x0a0a0f:0xf0ede8);
+}
+
+var fxAmount=0.5,fxMode='ascii';
+var scene,cam,ren,clock=new THREE.Clock();
+var mixer,idleAct,talkAct,talking=false;
+var rt,fsc,fcam,ambL,keyL,fillL;
+var modelRoot=null;
+var mouseX=0,mouseY=0,mouseUvX=0.5,mouseUvY=0.5,currentRotX=0,currentRotY=0;
+var normalMat,glitchMat,engraveMat,ppMesh;
+var isListening=false,recognition=null,glitchTalkMix=0,revealStart=-1;
+var di=1.6,tg;
+
+function setL(v){var s=v/100;if(ambL){ambL.intensity=0.5*s;keyL.intensity=1.0*s;fillL.intensity=0.5*s;}}
+function setMode(m){fxMode=m;['ascii','glitch','engrave'].forEach(function(id){document.getElementById('mode-'+id).classList.toggle('on',m===id);});document.getElementById('fx-canvas').style.display=(m==='ascii')?'block':'none';}
+function toggleSettings(){document.getElementById('gear').classList.toggle('open');document.getElementById('settings-drawer').classList.toggle('open');}
+function useSug(el){if(isBusy)return;document.getElementById('chat-input').value=el.textContent;sendMessage();}
+
+var ppVert='varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.0);}';
+// Normal + mouse push
+var normalFrag=['uniform sampler2D tD;uniform float t;uniform float fx;uniform vec2 mPos;varying vec2 vUv;','float h(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}','void main(){vec2 uv=vUv;vec2 md=uv-mPos;float mDist=length(md);','if(mDist<0.12){float mf=pow(1.0-mDist/0.12,2.0);uv+=normalize(md)*mf*fx*0.04;}','vec4 c=texture2D(tD,uv);c.rgb+=(h(vUv*1000.0+t*100.0)-.5)*fx*.1;','vec2 u=vUv*2.0-1.0;float v=1.0-dot(u*.5,u*.5);c.rgb*=mix(1.0,smoothstep(0.0,1.0,v),fx*.4);','c.r*=1.02;c.b*=.98;gl_FragColor=c;}'].join('\n');
+// Glitch + mouse + talk-driven
+var glitchFrag=['uniform sampler2D tD;uniform float t;uniform float fx;uniform float talkMix;uniform vec2 mPos;varying vec2 vUv;','float h(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}','float h2(float p){return fract(sin(p*127.1)*43758.5453);}','void main(){vec2 uv=vUv;float gx=fx*talkMix;','vec2 mmd=uv-mPos;float mmDist=length(mmd);float mZone=1.0-smoothstep(0.0,0.15,mmDist);float mg=mZone*fx*0.6;','uv.x+=(h(vec2(floor(uv.y*300.0),t*5.0))-0.5)*mg*0.08;','vec2 mc=vec2(0.5,0.55);vec2 md=(uv-mc)*vec2(1.0,2.0);float mp=1.0-smoothstep(0.0,0.20,length(md));float mb=1.0+mp*5.5;','float bY=floor(uv.y*180.0);float bH=h2(bY+floor(t*8.0)*0.1);float bT=0.82-gx*0.3-mp*0.35*gx-mg*0.2;uv.x+=step(bT,bH)*(h2(bY*3.7+t*4.0)-0.5)*0.10*(gx*mb+mg*2.0);','uv.x+=mp*(h2(floor(uv.y*400.0)+t*7.0)-0.5)*0.06*gx;','float bx=floor(uv.x*25.0);float by=floor(uv.y*25.0);float bh=h2(bx*7.0+by*13.0+floor(t*5.0));uv+=vec2(h2(bh*3.0)-0.5,h2(bh*7.0)-0.5)*0.07*mp*step(0.78-gx*0.15,bh)*gx;','for(float i=0.0;i<3.0;i++){float ts=floor(t*(4.0+i*2.0)+i*37.0);float ty=0.48+h2(ts)*0.15;float th=0.01+h2(ts+0.5)*0.035;uv.x+=step(ty,uv.y)*step(uv.y,ty+th)*step(0.45-gx*0.2,h2(ts+0.3))*(h2(ts+0.7)-0.5)*0.22*gx;}','uv+=vec2(h(uv*300.0+t*10.0)-0.5,h(uv*300.0+t*10.0+100.0)-0.5)*0.03*mp*mp*gx;','float ca=gx*0.004+mp*gx*0.018+mg*0.01;float cr=texture2D(tD,uv+vec2(ca,0.0)).r;float cg=texture2D(tD,uv).g;float cb=texture2D(tD,uv-vec2(ca,0.0)).b;vec4 c=vec4(cr,cg,cb,1.0);','c.rgb=mix(c.rgb,vec3(h(vUv*vec2(900.0,700.0)+t*400.0)),mp*gx*0.35+mg*0.15);','c.rgb=mix(c.rgb,vec3(c.b,c.r,c.g),mp*step(0.85-gx*0.1,h2(floor(t*6.0)+floor(vUv.y*50.0)))*0.7);','c.rgb+=vec3(step(0.93-mp*0.15-gx*0.06,h(vec2(floor(vUv.y*500.0),floor(t*30.0))))*0.4*gx);','c.rgb*=mix(1.0,0.93+0.07*sin(vUv.y*800.0),gx*0.4);','c.r+=mp*sin(t*4.0)*gx*0.2;c.b-=mp*sin(t*4.0)*gx*0.2;','c.rgb+=(h(vUv*1000.0+t*100.0)-.5)*fx*.08;float vig=1.0-length(vUv-vec2(0.5))*1.2;c.rgb*=mix(1.0,max(0.0,vig*vig),fx*0.3);gl_FragColor=c;}'].join('\n');
+// Engrave WebGL + mouse
+var engraveFrag=['uniform sampler2D tD;uniform float t;uniform float fx;uniform vec2 mPos;uniform vec2 res;varying vec2 vUv;','float h(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}','void main(){vec2 uv=vUv;vec2 md=uv-mPos;float mDist=length(md);','if(mDist<0.12){float mf=pow(1.0-mDist/0.12,2.0);uv+=normalize(md)*mf*fx*0.05;}','vec4 c=texture2D(tD,uv);float lum=dot(c.rgb,vec3(0.299,0.587,0.114));float dk=1.0-lum;','vec3 paper=vec3(0.96,0.94,0.91);if(lum<0.02){gl_FragColor=vec4(paper*0.3,1.0);return;}','float sp=mix(8.0,3.0,fx);vec2 px=vUv*res;','float l1=smoothstep(0.3,0.7,abs(sin((px.x+px.y)*3.14159/sp)));','float l2=smoothstep(0.3,0.7,abs(sin((px.x-px.y)*3.14159/sp)));','float l3=smoothstep(0.3,0.7,abs(sin(px.y*3.14159/sp)));','float l4=smoothstep(0.3,0.7,abs(sin(px.x*3.14159/(sp*1.3))));','float hv=1.0;if(dk>0.05)hv=min(hv,l1);if(dk>0.25)hv=min(hv,l2);if(dk>0.45)hv=min(hv,l3);if(dk>0.65)hv=min(hv,l4);','float fh=smoothstep(0.35-dk*0.3,0.65+dk*0.3,hv);','vec3 ink=vec3(0.12,0.08,0.06);vec3 result=mix(ink,paper,fh);','if(mDist<0.12){float mf=pow(1.0-mDist/0.12,2.0);result=mix(result,ink,mf*0.4*(1.0-smoothstep(0.2,0.6,abs(sin((px.x*0.7+px.y*0.7)*3.14159/(sp*0.7))))));}','result+=vec3(h(vUv*2000.0)-0.5)*0.02;vec2 vc=vUv*2.0-1.0;result*=mix(0.8,1.0,1.0-dot(vc*0.35,vc*0.35));gl_FragColor=vec4(result,1.0);}'].join('\n');
+
+function init(){
+  var ct=document.getElementById('viewport');
+  scene=new THREE.Scene();scene.background=new THREE.Color(isDark?0x0a0a0f:0xf0ede8);
+  cam=new THREE.PerspectiveCamera(30,ct.clientWidth/ct.clientHeight,.01,100);cam.position.set(0,0.9,1.6);
+  ren=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+  ren.setSize(ct.clientWidth,ct.clientHeight);ren.setPixelRatio(Math.min(devicePixelRatio,2));
+  ren.outputEncoding=THREE.sRGBEncoding;ren.toneMapping=THREE.ACESFilmicToneMapping;ren.toneMappingExposure=1.0;
+  ren.domElement.style.position='relative';ren.domElement.style.zIndex='2';
+  ct.insertBefore(ren.domElement,ct.firstChild);
+  ambL=new THREE.AmbientLight(0xffffff,0.5);scene.add(ambL);
+  keyL=new THREE.DirectionalLight(0xfff0e0,1.0);keyL.position.set(1,2,3);scene.add(keyL);
+  fillL=new THREE.DirectionalLight(0xe0eeff,0.5);fillL.position.set(-2,1,0);scene.add(fillL);
+  scene.add(new THREE.DirectionalLight(0xffd0a0,0.3)).position.set(0,1,-2);
+  var dn=false,px=0,py=0,th=0,ph=Math.PI/2;
+  di=1.6;tg=new THREE.Vector3(0,0.88,0);
+  ren.domElement.addEventListener('pointerdown',function(e){dn=true;px=e.clientX;py=e.clientY});
+  window.addEventListener('pointerup',function(){dn=false});
+  window.addEventListener('pointermove',function(e){
+    if(dn){th-=(e.clientX-px)*.005;ph-=(e.clientY-py)*.005;ph=Math.max(.1,Math.min(Math.PI-.1,ph));px=e.clientX;py=e.clientY;}
+    mouseX=(e.clientX/window.innerWidth)*2-1;mouseY=(e.clientY/window.innerHeight)*2-1;
+    var vpR=document.getElementById('viewport').getBoundingClientRect();
+    mouseUvX=(e.clientX-vpR.left)/vpR.width;mouseUvY=1.0-(e.clientY-vpR.top)/vpR.height;
+  });
+  ren.domElement.addEventListener('wheel',function(e){di*=(1+e.deltaY*.001);di=Math.max(.3,Math.min(8,di));e.preventDefault()},{passive:false});
+  var pr=Math.min(devicePixelRatio,2),w=ct.clientWidth,h=ct.clientHeight;
+  rt=new THREE.WebGLRenderTarget(w*pr,h*pr);
+  var mp=new THREE.Vector2(0.5,0.5);
+  normalMat=new THREE.ShaderMaterial({uniforms:{tD:{value:rt.texture},t:{value:0},fx:{value:.5},mPos:{value:mp}},vertexShader:ppVert,fragmentShader:normalFrag,depthTest:false});
+  glitchMat=new THREE.ShaderMaterial({uniforms:{tD:{value:rt.texture},t:{value:0},fx:{value:.5},talkMix:{value:0},mPos:{value:mp}},vertexShader:ppVert,fragmentShader:glitchFrag,depthTest:false});
+  engraveMat=new THREE.ShaderMaterial({uniforms:{tD:{value:rt.texture},t:{value:0},fx:{value:.5},mPos:{value:mp},res:{value:new THREE.Vector2(w*pr,h*pr)}},vertexShader:ppVert,fragmentShader:engraveFrag,depthTest:false});
+  ppMesh=new THREE.Mesh(new THREE.PlaneGeometry(2,2),normalMat);
+  fsc=new THREE.Scene();fsc.add(ppMesh);fcam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+  setMode('ascii');
+  (function frame(){
+    requestAnimationFrame(frame);if(mixer)mixer.update(clock.getDelta());
+    if(modelRoot){currentRotY+=(mouseX*0.08-currentRotY)*0.03;currentRotX+=(-mouseY*0.04-currentRotX)*0.03;modelRoot.rotation.y=Math.PI+currentRotY;modelRoot.rotation.x=currentRotX;}
+    cam.position.set(tg.x+di*Math.sin(ph)*Math.sin(th),tg.y+di*Math.cos(ph),tg.z+di*Math.sin(ph)*Math.cos(th));cam.lookAt(tg);
+    glitchTalkMix+=((talking?1:0)-glitchTalkMix)*0.08;mp.set(mouseUvX,mouseUvY);
+    if(fxMode==='glitch'){ppMesh.material=glitchMat;glitchMat.uniforms.t.value=clock.elapsedTime;glitchMat.uniforms.fx.value=fxAmount;glitchMat.uniforms.talkMix.value=glitchTalkMix;}
+    else if(fxMode==='engrave'){ppMesh.material=engraveMat;engraveMat.uniforms.t.value=clock.elapsedTime;engraveMat.uniforms.fx.value=fxAmount;}
+    else{ppMesh.material=normalMat;normalMat.uniforms.t.value=clock.elapsedTime;normalMat.uniforms.fx.value=fxAmount;}
+    ren.setRenderTarget(rt);ren.render(scene,cam);ren.setRenderTarget(null);ren.render(fsc,fcam);
+    if(fxMode==='ascii')renderASCII();
+  })();
+  window.addEventListener('resize',function(){var c=document.getElementById('viewport'),w=c.clientWidth,h=c.clientHeight,p=Math.min(devicePixelRatio,2);cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);rt.setSize(w*p,h*p);engraveMat.uniforms.res.value.set(w*p,h*p);initFC();});
+  var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';s.onload=function(){window._gl=true;autoLoadGLB();};document.head.appendChild(s);
+  initFC();
+}
+
+// === ASCII with sprinkle reveal + model-only mouse distortion ===
+var fxC,fxX,pxB=null,aC=' .,:-~=+*!&#%$@';
+function initFC(){fxC=document.getElementById('fx-canvas');var vp=document.getElementById('viewport');fxC.width=vp.clientWidth;fxC.height=vp.clientHeight;fxX=fxC.getContext('2d');pxB=null;}
+function rP(){var w=rt.width,h=rt.height;if(!pxB||pxB.length!==w*h*4)pxB=new Uint8Array(w*h*4);ren.setRenderTarget(rt);ren.readRenderTargetPixels(rt,0,0,w,h,pxB);ren.setRenderTarget(null);}
+function cHash(c,r){var n=c*374761393+r*668265263;n=(n^(n>>13))*1274126177;return((n^(n>>16))&0x7fffffff)/0x7fffffff;}
+function renderASCII(){
+  if(!fxX||fxMode!=='ascii')return;
+  var w=fxC.width,h=fxC.height;fxX.fillStyle=isDark?'#0a0a0f':'#f0ede8';fxX.fillRect(0,0,w,h);
+  rP();var gW=rt.width,gH=rt.height;
+  var cW=Math.max(3,Math.round(4+(1-fxAmount)*4)),cH=Math.max(5,Math.round(cW*1.8));
+  var cols=Math.floor(w/cW),rows=Math.floor(h/cH);
+  fxX.font='bold '+cH+'px Courier New';fxX.textBaseline='top';var nC=aC.length;
+  var now=performance.now()/1000;
+  var rPr=0;if(revealStart>0){var el=now-revealStart;rPr=Math.min(1,el/3);rPr=rPr*rPr*(3-2*rPr);}
+  var cx=w*.5,cy=h*.5,mD=Math.sqrt(cx*cx+cy*cy);
+  var mCx=mouseUvX*w,mCy=(1-mouseUvY)*h,mR=w*0.1;
+  for(var row=0;row<rows;row++){for(var col=0;col<cols;col++){
+    var px=col*cW+cW*.5,py=row*cH+cH*.5;
+    if(rPr<1){var dN=Math.sqrt((px-cx)*(px-cx)+(py-cy)*(py-cy))/mD;if(dN*0.3+cHash(col,row)*0.7>rPr)continue;}
+    var sx=Math.floor((col/cols)*gW),sy=Math.floor((1-row/rows)*gH),idx=(sy*gW+sx)*4;
+    var r=pxB[idx],g=pxB[idx+1],b=pxB[idx+2],lum=(0.299*r+0.587*g+0.114*b)/255;
+    if(isDark){if(lum<0.02)continue;}else{if(lum>0.90)continue;lum=1.0-lum;}
+    var ci=Math.min(nC-1,Math.max(0,Math.floor(lum*(nC-1))));
+    var dx=px-mCx,dy=py-mCy,md=Math.sqrt(dx*dx+dy*dy);
+    var cr,cg,cb;
+    if(isDark){cr=Math.floor(8+lum*75);cg=Math.floor(30+lum*155);cb=Math.floor(80+lum*175);}
+    else{var k=Math.floor(50+lum*30);cr=k;cg=k;cb=k;}
+    if(md<mR){var mf=Math.pow(1-md/mR,2);ci=Math.max(0,Math.min(nC-1,ci+Math.floor((Math.random()-.5)*mf*fxAmount*8)));var bb=mf*fxAmount*.6;cr=Math.min(255,cr+Math.floor(bb*180));cg=Math.min(255,cg+Math.floor(bb*140));cb=Math.min(255,cb+Math.floor(bb*200));}
+    if(rPr<1){var dN2=Math.sqrt((px-cx)*(px-cx)+(py-cy)*(py-cy))/mD;var age=(rPr-(dN2*0.3+cHash(col,row)*0.7))*8;if(age>0&&age<1){cr=Math.min(255,cr+Math.floor((1-age)*150));cg=Math.min(255,cg+Math.floor((1-age)*180));cb=Math.min(255,cb+Math.floor((1-age)*220));}}
+    fxX.fillStyle='rgb('+cr+','+cg+','+cb+')';fxX.fillText(aC[ci],col*cW,row*cH);
+  }}
+  fxX.strokeStyle=isDark?'rgba(30,70,140,0.05)':'rgba(80,60,40,0.06)';fxX.lineWidth=1;
+  for(var gx=0;gx<w;gx+=40){fxX.beginPath();fxX.moveTo(gx,0);fxX.lineTo(gx,h);fxX.stroke();}
+  for(var gy=0;gy<h;gy+=40){fxX.beginPath();fxX.moveTo(0,gy);fxX.lineTo(w,gy);fxX.stroke();}
+  fxX.fillStyle=isDark?'rgba(0,0,0,0.05)':'rgba(0,0,0,0.03)';for(var y=0;y<h;y+=3)fxX.fillRect(0,y,w,1);
+  var grad=fxX.createRadialGradient(w/2,h/2,w*0.2,w/2,h/2,w*0.65);
+  grad.addColorStop(0,isDark?'rgba(0,0,0,0)':'rgba(240,237,232,0)');grad.addColorStop(1,isDark?'rgba(0,0,0,0.5)':'rgba(240,237,232,0.5)');
+  fxX.fillStyle=grad;fxX.fillRect(0,0,w,h);
+}
+
+// === MODEL ===
+function autoLoadGLB(){fetch('avatar_blink_v5.glb').then(function(r){if(!r.ok)throw new Error(r.status);return r.arrayBuffer();}).then(function(buf){doParse(buf);}).catch(function(e){console.warn('Auto-load failed, showing upload UI:',e);document.getElementById('overlay').classList.remove('hidden');});}
+function loadFile(f){var r=new FileReader();r.onload=function(e){(function w(){if(window._gl)doParse(e.target.result);else setTimeout(w,100)})()};r.readAsArrayBuffer(f);}
+function doParse(buf){
+  new THREE.GLTFLoader().parse(buf,'',function(gltf){
+    gltf.scene.rotation.y=Math.PI;scene.add(gltf.scene);modelRoot=gltf.scene;
+    mixer=new THREE.AnimationMixer(gltf.scene);var clips=gltf.animations;
+    if(clips.length===1){var full=clips[0];if(THREE.AnimationUtils&&THREE.AnimationUtils.subclip){talkAct=mixer.clipAction(THREE.AnimationUtils.subclip(full,'talking',1,162,24));talkAct.setLoop(THREE.LoopRepeat);idleAct=mixer.clipAction(THREE.AnimationUtils.subclip(full,'idle',163,600,24));idleAct.setLoop(THREE.LoopRepeat);}else{idleAct=mixer.clipAction(full);idleAct.setLoop(THREE.LoopRepeat);talkAct=idleAct;}}
+    else{clips.forEach(function(c){var n=c.name.toLowerCase();if(n.indexOf('idle')!==-1){idleAct=mixer.clipAction(c);idleAct.setLoop(THREE.LoopRepeat);}else if(n.indexOf('talk')!==-1){talkAct=mixer.clipAction(c);talkAct.setLoop(THREE.LoopRepeat);}});if(!idleAct&&clips.length>0){idleAct=mixer.clipAction(clips[0]);idleAct.setLoop(THREE.LoopRepeat);}if(!talkAct)talkAct=idleAct;}
+    if(idleAct)idleAct.play();
+    var box=new THREE.Box3().setFromObject(gltf.scene);var cen=box.getCenter(new THREE.Vector3());var sz=box.getSize(new THREE.Vector3());
+    // Update orbit target to model center so it's properly framed
+    tg.set(cen.x, cen.y, cen.z);
+    di=sz.y*1.1;
+    cam.position.set(cen.x,cen.y,cen.z+di);cam.lookAt(cen);
+    document.getElementById('overlay').classList.add('hidden');revealStart=performance.now()/1000;
+  });
+}
+
+// === TTS: Cloudflare Deepgram Aura (via worker) > Web Speech API fallback ===
+function xfade(a,b,d){if(!a||!b||a===b)return;b.reset();b.setEffectiveWeight(1);b.play();a.crossFadeTo(b,d||0.3,true);}
+function toTalk(){if(talking)return;talking=true;xfade(idleAct,talkAct,0.2);}
+function toIdle(){if(!talking)return;talking=false;xfade(talkAct,idleAct,0.15);}
+var fadeTimer=null,ttsAudio=null,isSpeaking=false;
+var AI_WORKER_URL='https://kai-ai-proxy.kai-kleinbard.workers.dev';
+var ttsVoice='orion';
+var autoSpeak=true;
+
+function toggleAutoSpeak(){
+  autoSpeak=!autoSpeak;
+  document.getElementById('speak-btn').classList.toggle('on',autoSpeak);
+}
+
+function showStopBtn(show){
+  document.getElementById('send-icon').style.display=show?'none':'block';
+  document.getElementById('stop-icon').style.display=show?'block':'none';
+  document.getElementById('send-btn').classList.toggle('stopping',show);
+}
+
+function stopSpeaking(){
+  isSpeaking=false;
+  if(ttsAudio){ttsAudio.pause();ttsAudio.currentTime=0;ttsAudio=null;}
+  if(speechSynthesis)speechSynthesis.cancel();
+  if(fadeTimer){clearTimeout(fadeTimer);fadeTimer=null;}
+  toIdle();
+  showStopBtn(false);
+  setBusy(false);
+}
+
+async function cfTTS(text){
+  if(!text||!text.trim())throw new Error('empty text');
+  var resp=await fetch(AI_WORKER_URL+'/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,voice:ttsVoice})});
+  if(!resp.ok)throw new Error('TTS error '+resp.status);
+  var blob=await resp.blob();
+  var url=URL.createObjectURL(blob);
+  return new Promise(function(ok,no){
+    ttsAudio=new Audio(url);
+    var talkStarted=false;ttsAudio.ontimeupdate=function(){if(!talkStarted&&ttsAudio.currentTime>0.05){talkStarted=true;toTalk();}};
+    ttsAudio.onended=function(){URL.revokeObjectURL(url);ttsAudio=null;isSpeaking=false;showStopBtn(false);toIdle();ok();};
+    ttsAudio.onerror=function(){URL.revokeObjectURL(url);ttsAudio=null;isSpeaking=false;showStopBtn(false);toIdle();no(new Error('play'));};
+    ttsAudio.play();
+  });
+}
+
+function fbTTS(t){
+  if(!speechSynthesis){toIdle();isSpeaking=false;showStopBtn(false);return;}
+  speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.rate=0.95;
+  var voices=speechSynthesis.getVoices();
+  var male=voices.find(function(v){return /david|daniel|james|mark/i.test(v.name)&&v.lang.startsWith('en');});
+  if(male)u.voice=male;
+  u.onstart=function(){toTalk();};
+  u.onend=function(){clearTimeout(fadeTimer);isSpeaking=false;showStopBtn(false);toIdle();};
+  u.onerror=function(){clearTimeout(fadeTimer);isSpeaking=false;showStopBtn(false);toIdle();};
+  speechSynthesis.speak(u);
+}
+
+var KAI_PREFIX='[You are Kai. Now: Tech Lead at TALON Lab building mission-critical tech to save lives using small LMs on edge devices. Also: Harvard Edge Computing researcher, bodyLITERATE founder helping neurodivergent learners, ex-Avaya, dancer/choreographer. Only state facts given here. 1-2 sentences.] ';
+
+// Topic-based follow-up suggestions — pick 3 relevant to what was discussed
+var TOPIC_SUGGESTS={
+  ai:['How do you use AI daily?','Other projects you built?','Favorite AI tools?'],
+  talon:['What does TALON build?','Small language models?','Your team at TALON?'],
+  harvard:['Harvard research focus?','Agentic AI examples?','Accessible UX approach?'],
+  body:['What is bodyLITERATE?','Neurodivergent learning?','How many families?'],
+  dance:['Dance and tech connection?','Bill T. Jones experience?','Creature in the City?'],
+  edu:['Teaching philosophy?','Study Duck story?','UPenn experience?'],
+  stack:['Your tech stack?','Favorite framework?','AWS or Azure?'],
+  projects:['Tell me about AI Engineering','What is Arch-Scholar?','Show me KAIK.SPACE'],
+  general:['What have you built?','Biggest challenge?','What inspires you?']
+};
+
+function pickSuggestions(response,asked){
+  var text=(response+' '+asked).toLowerCase();
+  var scored=[];
+  var keywords={
+    ai:/\b(ai|ml|model|llm|gpt|machine learning|neural|deep learning|language model)\b/,
+    talon:/\b(talon|edge device|small.*model|mission critical)\b/,
+    harvard:/\b(harvard|research|agentic|agent)\b/,
+    body:/\b(bodyliterate|neurodiverg|learner|learning specialist|families|adhd|executive func)\b/,
+    dance:/\b(danc|choreograph|bill t|arnie|perform|movement|creature|armory)\b/,
+    edu:/\b(teach|educ|student|tutor|study duck|upenn|penn|algorithm|curriculum)\b/,
+    stack:/\b(react|next|aws|azure|python|langchain|stack|javascript|fullstack|full.stack)\b/,
+    projects:/\b(built|project|portfolio|kaik|arch.scholar|ai.engineer|tinytorch|mlsys)\b/
+  };
+  for(var topic in keywords){
+    var m=text.match(keywords[topic]);
+    if(m)scored.push({topic:topic,score:m.length});
+  }
+  scored.sort(function(a,b){return b.score-a.score;});
+  var picks=[];
+  var used={};
+  var topics=scored.slice(0,2).map(function(s){return s.topic;});
+  if(!topics.length)topics=['general'];
+  topics.push('general');
+  for(var i=0;i<topics.length&&picks.length<3;i++){
+    var pool=TOPIC_SUGGESTS[topics[i]];
+    for(var j=0;j<pool.length&&picks.length<3;j++){
+      if(!used[pool[j]]){picks.push(pool[j]);used[pool[j]]=true;}
+    }
+  }
+  return picks;
+}
+
+// === PROJECT VIDEO OVERLAY ===
+var PROJECT_VIDEOS={
+  'ai-engineering':'public/images/ai-engineering/ai-engineering.mp4',
+  'arch-scholar':'public/images/arch-scholar/Arch-Scholar.mp4',
+  'kaik-space':'public/images/kaik-space/kaik-space.mp4'
+};
+var PROJECT_INFO={
+  'ai-engineering':'AI Engineering: Harvard initiative to educate 1M AI engineers by 2030. TinyML curriculum.',
+  'arch-scholar':'Arch-Scholar: Harvard multi-agent AI for automated scholarly paper review.',
+  'kaik-space':'KAIK.SPACE: WebGL experiment lab, spatial augmentation, 3D portfolio.'
+};
+var projectsVisible=false;
+
+function showProjects(){
+  if(projectsVisible)return;
+  projectsVisible=true;
+  var overlay=document.getElementById('project-overlay');
+  overlay.classList.add('visible');
+  var cards=overlay.querySelectorAll('.proj-card');
+  cards.forEach(function(card){
+    var key=card.getAttribute('data-proj');
+    var video=card.querySelector('video');
+    if(!video.src||!video.src.includes('.mp4')){
+      video.src=PROJECT_VIDEOS[key];
+      video.load();
+    }
+    video.play().catch(function(){});
+  });
+}
+
+function hideProjects(){
+  if(!projectsVisible)return;
+  projectsVisible=false;
+  var overlay=document.getElementById('project-overlay');
+  overlay.classList.remove('visible');
+  overlay.querySelectorAll('video').forEach(function(v){v.pause();});
+}
+
+function toggleProjCard(card){
+  var video=card.querySelector('video');
+  if(video.paused)video.play().catch(function(){});
+  else video.pause();
+}
+
+function isProjectQuestion(text){
+  return /\b(built|project|portfolio|ship|create|made|show|work.*on)\b/i.test(text);
+}
+
+function updateSuggestions(suggestions){
+  var box=document.getElementById('suggestions');
+  if(!suggestions.length)return;
+  box.innerHTML='';
+  suggestions.forEach(function(s){
+    var d=document.createElement('div');
+    d.className='suggestion';
+    d.textContent=s;
+    d.onclick=function(){useSug(d);};
+    box.appendChild(d);
+  });
+}
+
+async function streamAI(message){
+  // Hide any previous project overlay on new message
+  hideProjects();
+
+  var log=document.getElementById('chat-log');
+  log.classList.add('visible');
+  var userMsg=document.createElement('div');userMsg.className='chat-msg user';userMsg.textContent=message;log.appendChild(userMsg);
+  var aiMsg=document.createElement('div');aiMsg.className='chat-msg ai';
+  aiMsg.innerHTML='<span class="ai-text"></span><span class="ai-cursor"></span>';
+  log.appendChild(aiMsg);log.scrollTop=log.scrollHeight;
+  var textEl=aiMsg.querySelector('.ai-text');
+
+  // Detect if asking about projects — inject project info if so
+  var askingProjects=isProjectQuestion(message);
+  var payload=KAI_PREFIX;
+  if(askingProjects){
+    payload+='[Projects: AI Engineering (1M AI engineers, TinyML), Arch-Scholar (AI paper review), KAIK.SPACE (WebGL 3D lab).] ';
+  }
+  payload+=message;
+
+  // Ensure under 500 char limit
+  if(payload.length>498)payload=payload.slice(0,498);
+
+  var resp=await fetch(AI_WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:payload})});
+  if(!resp.ok)throw new Error('AI error '+resp.status);
+  var reader=resp.body.getReader();var decoder=new TextDecoder();var full='';var buf='';
+  while(true){
+    var chunk=await reader.read();if(chunk.done)break;
+    buf+=decoder.decode(chunk.value,{stream:true});
+    var lines=buf.split('\n');buf=lines.pop();
+    for(var i=0;i<lines.length;i++){
+      var line=lines[i].trim();if(!line.startsWith('data: ')||line==='data: [DONE]')continue;
+      try{var d=JSON.parse(line.slice(6));if(d.response)full+=d.response;}catch(e){}
+    }
+    textEl.textContent=full;log.scrollTop=log.scrollHeight;
+  }
+  var cur=aiMsg.querySelector('.ai-cursor');if(cur)cur.remove();
+  textEl.textContent=full.trim();
+  updateSuggestions(pickSuggestions(full,message));
+
+  // Show project cards if user asked about projects
+  if(askingProjects)showProjects();
+
+  return full.trim();
+}
+
+var isBusy=false;
+
+function setBusy(b){
+  isBusy=b;
+  document.querySelectorAll('.suggestion').forEach(function(s){s.style.pointerEvents=b?'none':'auto';s.style.opacity=b?'0.4':'1';});
+  document.getElementById('mic-btn').style.pointerEvents=b&&!isSpeaking?'none':'auto';
+  document.getElementById('mic-btn').style.opacity=b&&!isSpeaking?'0.4':'1';
+  document.getElementById('chat-input').disabled=b;
+}
+
+function sendOrStop(){
+  if(isSpeaking){stopSpeaking();return;}
+  if(!isBusy)sendMessage();
+}
+
+async function sendMessage(){
+  var el=document.getElementById('chat-input');var t=el.value.trim();if(!t)return;el.value='';
+  if(isBusy)return;
+  if(isSpeaking)stopSpeaking();
+  setBusy(true);
+  var aiText='';
+  try{aiText=await streamAI(t);}catch(e){console.warn('AI stream error:',e);aiText='';}
+  if(!autoSpeak){setBusy(false);return;}
+  var speakText=aiText||t;
+  if(!speakText.trim()){setBusy(false);return;}
+  isSpeaking=true;
+  showStopBtn(true);
+  try{await cfTTS(speakText);setBusy(false);return;}catch(e){console.warn('CF TTS error:',e);}
+  fbTTS(speakText);
+  setBusy(false);
+}
+
+// === MIC ===
+function toggleMic(){
+  if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window))return;
+  if(isListening){recognition&&recognition.stop();return;}
+  var S=window.SpeechRecognition||window.webkitSpeechRecognition;recognition=new S();recognition.continuous=false;recognition.interimResults=true;recognition.lang='en-US';
+  recognition.onstart=function(){isListening=true;document.getElementById('mic-btn').classList.add('listening');};
+  recognition.onresult=function(e){var t='';for(var i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;document.getElementById('chat-input').value=t;};
+  recognition.onend=function(){isListening=false;document.getElementById('mic-btn').classList.remove('listening');var t=document.getElementById('chat-input').value.trim();if(t)sendMessage();};
+  recognition.onerror=function(){isListening=false;document.getElementById('mic-btn').classList.remove('listening');};
+  recognition.start();
+}
+
+document.getElementById('fi').addEventListener('change',function(e){var f=e.target.files[0];if(f)loadFile(f)});
+document.getElementById('chat-input').addEventListener('keydown',function(e){if(e.code==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
+document.addEventListener('keydown',function(e){if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;if(e.code==='Space'){e.preventDefault();talking?toIdle():toTalk();}if(e.code==='Digit2')setMode('ascii');if(e.code==='Digit3')setMode('glitch');if(e.code==='Digit4')setMode('engrave');});
+init();
+setTimeout(typeNext,600);
+
+</script>
+</body>
+</html>

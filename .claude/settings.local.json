@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sI \"https://cdn.jsdelivr.net/npm/kokoro-js@0.5.0/+esm\")",
+      "Bash(curl -s \"https://registry.npmjs.org/kokoro-js\")",
+      "Bash(curl -s \"https://registry.npmjs.org/kokoro-js/latest\")",
+      "Bash(curl -sI \"https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm\")",
+      "Bash(curl -s \"https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm\")",
+      "Bash(curl -s \"https://api.cloudflare.com/client/v4/accounts\" -H \"Authorization: Bearer cfut_CgjsCi9mmDL2vMeT1PdyOCanJPNipphhsqJ1upjTbd686515\")",
+      "Bash(curl:*)",
+      "Bash(npm list:*)",
+      "Bash(where wrangler:*)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(xxd /tmp/tts_proxy_test.wav)",
+      "WebSearch"
+    ]
+  }
+}
