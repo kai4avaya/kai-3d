@@ -435,12 +435,12 @@ function fbTTS(t){
   speechSynthesis.speak(u);
 }
 
-var KAI_PREFIX='[You are Kai. Now: Tech Lead at TALON Lab building mission-critical tech to save lives using small LMs on edge devices. Also: Harvard Edge Computing researcher. Background in edtech — founded bodyLITERATE supporting neurodivergent learners. Ex-Avaya. Also a dancer/choreographer. Only state facts given here. 1-2 sentences.] ';
+var KAI_PREFIX='[You are Kai. Now: Tech Lead at TALON Lab building mission-critical tech to save lives using small LLMs on edge devices. Also: Harvard Edge Computing researcher. Founder of bodyLITERATE, a company supporting neurodivergent learners. Ex-Avaya. Also a dancer/choreographer. Only state facts given here. 1-2 sentences.] ';
 
 // Topic-based follow-up suggestions — pick 3 relevant to what was discussed
 var TOPIC_SUGGESTS={
   ai:['Explain how you built this?','Other projects you built?','Favorite AI tools?'],
-  talon:['What does TALON build?','Small language models?','Your team at TALON?'],
+  talon:['What does TALON build?','Small LLMs?','Your team at TALON?'],
   harvard:['Harvard research focus?','Agentic AI examples?','Accessible UX approach?'],
   body:['What is bodyLITERATE?','Neurodivergent learning?','How many families?'],
   dance:['Dance and tech connection?','Bill T. Jones experience?','Creature in the City?'],
@@ -546,18 +546,18 @@ function updateSuggestions(suggestions){
 // === CANNED FALLBACK RESPONSES ===
 var CANNED={
   // Initial suggestions
-  'tell me about yourself':'Hey, I\'m Kai Kleinbard. I\'m an AI/ML Tech Lead at TALON Lab building mission-critical tech on edge devices. I also do research at Harvard\'s Edge Computing Lab and come from a background in education technology where I built bodyLITERATE, a company supporting neurodivergent learners. I\'ve also done some work as a dancer and choreographer along the way. Want to connect? Find me at linkedin.com/in/kai-kleinbard.',
-  'what are you working on':'I\'m leading a team at TALON Lab right now, building mission-critical software that saves lives with small language models running on edge devices. High-stakes, high-impact work at the intersection of AI and the real world.',
+  'tell me about yourself':'Hey, I\'m Kai Kleinbard. I\'m an AI/ML Tech Lead at TALON Lab building mission-critical tech on edge devices. I also do research at Harvard\'s Edge Computing Lab and come from a background in education technology where I founded bodyLITERATE, a company supporting neurodivergent learners. I\'ve also done some work as a dancer and choreographer along the way. Want to connect? Find me at linkedin.com/in/kai-kleinbard.',
+  'what are you working on':'I\'m leading a team at TALON Lab right now, building mission-critical software that saves lives with small LLMs running on edge devices. High-stakes, high-impact work at the intersection of AI and the real world.',
   'what have you built':'Three projects I\'m proud of: AI Engineering, an open-access TinyML curriculum to educate a million engineers globally. Arch-Scholar, a multi-agent AI system for scholarly paper review out of Harvard. And KAIK.SPACE, a WebGL experiment lab for browser-based 3D graphics. Want to build something together? Reach out at linkedin.com/in/kai-kleinbard.',
   'what\'s on your mind today':'Lately I\'ve been thinking a lot about making AI more accessible, not just the tools themselves but the education around them. That\'s the thread connecting the AI Engineering initiative and my work with bodyLITERATE.',
-  'give me a hot take':'Small language models on edge devices are going to matter more than massive cloud models for most real-world use cases. Not every problem needs a billion parameters. Sometimes you just need something that runs offline and saves a life.',
+  'give me a hot take':'Small LLMs on edge devices are going to matter more than massive cloud models for most real-world use cases. Not every problem needs a billion parameters. Sometimes you just need something that runs offline and saves a life.',
   // AI topic
   'explain how you built this':'So this site is actually me as a 3D avatar. I started by generating a 3D model of myself using an AI model, then brought it into Blender where I rigged it with bones for talking and body movement. I set up some simple animation frames for idle and speaking states, exported it as a GLB, and dropped it straight into a single HTML file. The rendering runs on Three.js with custom WebGL shaders for the ASCII, glitch, and engrave effects. The whole thing, including the AI chat and text-to-speech, is one file with no build step.',
   'other projects you built':'In addition to recent projects — AI Engineering, a nonprofit education initiative teaching AI systems engineering to underserved communities; Arch-Scholar, an agentic academic paper reviewer; and KAIK.SPACE, my digital embodied portfolio — I\'ve shipped full-stack apps with Langchain and other AI frameworks. I\'m comfortable building in NextJS, GoLang, and Node.js. I\'ve fine-tuned GPT models through various freelance projects and co-founded StudyDuck, building a full NLP pipeline on AWS. I\'ve also built fully WCAG-compliant data visualization dashboards with d3.js and other visualization tools. I\'m constantly learning by building. Want to build something together? Message me at linkedin.com/in/kai-kleinbard.',
   'favorite ai tools':'Claude Code is my daily driver. The agentic workflow just clicks with how I think. Gemini CLI for quick iterations, Mermaid AI for diagramming architecture visually. Honestly, I also love any platform with a generous free tier. You\'d be surprised how much you can ship without spending a dime if you\'re resourceful.',
   // TALON topic
-  'what does talon build':'TALON Lab builds mission-critical tech that saves lives. We deploy small language models on edge devices, so AI runs in real time even where there\'s no cloud connectivity. When the stakes are that high, every decision counts.',
-  'small language models':'At TALON we focus on small language models that run on edge devices, designed for disconnected environments where lives depend on real-time inference. It\'s a completely different challenge from scaling up. Every parameter has to earn its place.',
+  'what does talon build':'TALON Lab builds mission-critical tech that saves lives. We deploy small LLMs on edge devices, so AI runs in real time even where there\'s no cloud connectivity. When the stakes are that high, every decision counts.',
+  'small LLMs':'At TALON we focus on small LLMs that run on edge devices, designed for disconnected environments where lives depend on real-time inference. It\'s a completely different challenge from scaling up. Every parameter has to earn its place.',
   'your team at talon':'I lead a team of developers at TALON Lab focused on mission-critical software. Reliability isn\'t optional in our world. The team is sharp, the work is purposeful, and every deployment genuinely matters.',
   // Harvard topic
   'harvard research focus':'At Harvard\'s Edge Computing Lab, I sit at the intersection of complex AI systems and human-centric design. I build agentic systems that can reason autonomously while making sure they\'re actually usable through intuitive, accessible interfaces.',
