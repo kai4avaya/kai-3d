@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avatar</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0a0f;color:#e0ddd4;font-family:'DM Sans',sans-serif;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+  #viewport{flex:1;position:relative;overflow:hidden}
+  #fx-canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;pointer-events:none;background:#0a0a0f}
+  #chat-bar{position:relative;z-index:20;padding:10px 16px 14px;background:rgba(12,12,18,0.95);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.06)}
+  #mode-row{display:flex;gap:6px;margin-bottom:8px;align-items:center;justify-content:center}
+  #mode-row button{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#888;padding:4px 12px;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:10px;cursor:pointer;transition:all 0.25s;letter-spacing:0.3px}
+  #mode-row button:hover{color:#bbb;border-color:rgba(255,255,255,0.15)}
+  #mode-row button.on{color:#c8d8f0;background:rgba(80,130,200,0.12);border-color:rgba(80,130,200,0.3)}
+  .mode-dot{width:6px;height:6px;border-radius:50%;background:#3a7;flex-shrink:0;margin-right:4px;transition:background 0.3s}
+  .mode-dot.on{background:#d97757;animation:pulse .6s ease-in-out infinite alternate}
+  @keyframes pulse{from{opacity:.6;transform:scale(.85)}to{opacity:1;transform:scale(1.15)}}
+  #status-label{font-size:10px;color:#555;margin-right:8px;font-family:'JetBrains Mono',monospace;min-width:40px}
+  .mode-spacer{flex:1}
+  .slider-pill{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:2px 8px}
+  .slider-pill label{font-size:9px;color:#555;font-family:'JetBrains Mono',monospace}
+  .slider-pill input[type="range"]{width:40px;height:3px;-webkit-appearance:none;background:rgba(255,255,255,0.12);border-radius:2px;outline:none}
+  .slider-pill input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:9px;height:9px;border-radius:50%;background:#6a9fd8;cursor:pointer}
+  #suggestions{display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  #suggestions::-webkit-scrollbar{display:none}
+  .suggestion{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);color:#888;padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;transition:all 0.2s;white-space:nowrap;flex-shrink:0}
+  .suggestion:hover{color:#c8d8f0;background:rgba(80,130,200,0.08);border-color:rgba(80,130,200,0.25)}
+  #input-row{display:flex;gap:8px;align-items:flex-end}
+  #chat-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#e0ddd4;padding:10px 14px;border-radius:14px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;resize:none;line-height:1.4;height:52px}
+  #chat-input:focus{border-color:rgba(100,160,220,0.4)}
+  #chat-input::placeholder{color:#444}
+  #mic-btn,#send-btn{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#777;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0}
+  #mic-btn:hover{background:rgba(100,160,220,0.1);border-color:rgba(100,160,220,0.3);color:#a0c4e8}
+  #mic-btn.listening{background:rgba(217,119,87,0.15);border-color:rgba(217,119,87,0.4);color:#e8a88a;animation:pulse 0.6s ease-in-out infinite alternate}
+  #send-btn{border-color:rgba(100,160,220,0.15);background:rgba(100,160,220,0.06);color:#6a9fd8}
+  #send-btn:hover{background:rgba(100,160,220,0.15);border-color:rgba(100,160,220,0.3)}
+  #mic-btn svg,#send-btn svg{width:18px;height:18px;fill:currentColor}
+  #overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,10,15,0.97);z-index:100;transition:opacity 0.5s}
+  #overlay.hidden{opacity:0;pointer-events:none}
+  #overlay h1{font-size:22px;font-weight:500;margin-bottom:4px}
+  #overlay p{color:#666;font-size:13px;margin-bottom:24px}
+  .uz{width:340px;max-width:85vw;padding:32px 20px;border:1.5px dashed rgba(255,255,255,0.12);border-radius:16px;text-align:center;cursor:pointer;transition:all 0.3s}
+  .uz:hover{border-color:rgba(100,160,220,0.4);background:rgba(100,160,220,0.03)}
+  .uz label{cursor:pointer;display:block;font-size:13px;color:#888}
+  .uz label span{color:#6a9fd8}
+  input[type="file"]{display:none}
+</style>
+</head>
+<body>
+<div id="viewport">
+  <div id="overlay">
+    <h1>Avatar</h1>
+    <p>Load your animated GLB</p>
+    <div class="uz" onclick="document.getElementById('fi').click()">
+      <label>Click to load <span>.glb file</span></label>
+    </div>
+    <input type="file" id="fi" accept=".glb,.gltf">
+  </div>
+  <canvas id="fx-canvas"></canvas>
+</div>
+<div id="chat-bar">
+  <div id="mode-row">
+    <div class="mode-dot" id="dot-indicator"></div>
+    <span id="status-label">idle</span>
+    <button id="mode-ascii" class="on" onclick="setMode('ascii')">ASCII</button>
+    <button id="mode-glitch" onclick="setMode('glitch')">Glitch</button>
+    <button id="mode-engrave" onclick="setMode('engrave')">Engrave</button>
+    <div class="mode-spacer"></div>
+    <div class="slider-pill"><label>fx</label><input type="range" min="0" max="100" value="50" oninput="fxAmount=this.value/100"></div>
+    <div class="slider-pill"><label>light</label><input type="range" min="20" max="250" value="100" oninput="setL(this.value)"></div>
+  </div>
+  <div id="suggestions">
+    <div class="suggestion" onclick="useSuggestion(this)">Tell me about yourself</div>
+    <div class="suggestion" onclick="useSuggestion(this)">What are you working on?</div>
+    <div class="suggestion" onclick="useSuggestion(this)">Explain this project to me</div>
+    <div class="suggestion" onclick="useSuggestion(this)">What's on your mind today?</div>
+    <div class="suggestion" onclick="useSuggestion(this)">Give me a hot take</div>
+  </div>
+  <div id="input-row">
+    <textarea id="chat-input" rows="2" placeholder="Type something to say..."></textarea>
+    <button id="mic-btn" onclick="toggleMic()" title="Voice input"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/></svg></button>
+    <button id="send-btn" onclick="sendMessage()" title="Send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+var fxAmount=0.5,fxMode='ascii';
+var scene,cam,ren,clock=new THREE.Clock();
+var mixer,idleAct,talkAct,talking=false;
+var rt,fsc,fcam,ambL,keyL,fillL;
+var modelRoot=null;
+var mouseX=0,mouseY=0,currentRotX=0,currentRotY=0;
+var normalMat,glitchMat,ppMesh;
+var isListening=false,recognition=null,glitchTalkMix=0;
+
+function setL(v){var s=v/100;if(ambL){ambL.intensity=0.5*s;keyL.intensity=1.0*s;fillL.intensity=0.5*s;}}
+function setMode(m){
+  fxMode=m;
+  ['ascii','glitch','engrave'].forEach(function(id){document.getElementById('mode-'+id).classList.toggle('on',m===id);});
+  document.getElementById('fx-canvas').style.display=(m==='ascii'||m==='engrave')?'block':'none';
+}
+function useSuggestion(el){document.getElementById('chat-input').value=el.textContent;sendMessage();}
+
+var ppVert='varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.0);}';
+var normalFrag='uniform sampler2D tD;uniform float t;uniform float fx;varying vec2 vUv;float h(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}void main(){vec4 c=texture2D(tD,vUv);c.rgb+=(h(vUv*1000.0+t*100.0)-.5)*fx*.1;vec2 u=vUv*2.0-1.0;float v=1.0-dot(u*.5,u*.5);v=smoothstep(0.0,1.0,v);c.rgb*=mix(1.0,v,fx*.4);c.r*=1.02;c.b*=.98;gl_FragColor=c;}';
+var glitchFrag=['uniform sampler2D tD;uniform float t;uniform float fx;uniform float talkMix;varying vec2 vUv;','float h(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}','float h2(float p){return fract(sin(p*127.1)*43758.5453);}','void main(){vec2 uv=vUv;float gx=fx*talkMix;','vec2 mc=vec2(0.5,0.55);vec2 md=(uv-mc)*vec2(1.0,2.0);float mp=1.0-smoothstep(0.0,0.20,length(md));float mb=1.0+mp*5.5;','float bandY=floor(uv.y*180.0);float bandHash=h2(bandY+floor(t*8.0)*0.1);float bandThresh=0.82-gx*0.3-mp*0.35*gx;float bandActive=step(bandThresh,bandHash);float bandShift=(h2(bandY*3.7+t*4.0)-0.5)*0.10*gx*mb;uv.x+=bandShift*bandActive;','uv.x+=mp*(h2(floor(uv.y*400.0)+t*7.0)-0.5)*0.06*gx;','float bx=floor(uv.x*25.0);float by=floor(uv.y*25.0);float bh=h2(bx*7.0+by*13.0+floor(t*5.0));float ba=mp*step(0.78-gx*0.15,bh);uv+=vec2(h2(bh*3.0)-0.5,h2(bh*7.0)-0.5)*0.07*ba*gx;','for(float i=0.0;i<3.0;i++){float ts=floor(t*(4.0+i*2.0)+i*37.0);float ty=0.48+h2(ts)*0.15;float th=0.01+h2(ts+0.5)*0.035;float it=step(ty,uv.y)*step(uv.y,ty+th);float ta=step(0.45-gx*0.2,h2(ts+0.3));uv.x+=it*ta*(h2(ts+0.7)-0.5)*0.22*gx;}','uv+=vec2(h(uv*300.0+t*10.0)-0.5,h(uv*300.0+t*10.0+100.0)-0.5)*0.03*mp*mp*gx;','vec2 center=vec2(0.5,0.5);vec2 d=uv-center;float dist=length(d);float angle=atan(d.y,d.x);float sw=gx*0.06*sin(t*0.15)*(1.0-dist*2.0);uv=center+vec2(cos(angle+sw),sin(angle+sw))*dist;','float ca=gx*0.004+mp*gx*0.018;float cr=texture2D(tD,uv+vec2(ca,0.0)).r;float cg=texture2D(tD,uv).g;float cb=texture2D(tD,uv-vec2(ca,0.0)).b;vec4 c=vec4(cr,cg,cb,1.0);','c.rgb=mix(c.rgb,vec3(h(vUv*vec2(900.0,700.0)+t*400.0)),mp*gx*0.35);','float corruptSeed=h2(floor(t*6.0)+floor(vUv.y*50.0));c.rgb=mix(c.rgb,vec3(c.b,c.r,c.g),mp*step(0.85-gx*0.1,corruptSeed)*0.7);','float sl=h(vec2(floor(vUv.y*500.0),floor(t*30.0)));c.rgb+=vec3(step(0.93-mp*0.15-gx*0.06,sl)*0.4*gx);','c.rgb=mix(c.rgb,vec3(h(vUv*vec2(1920.0,1080.0)+t*500.0)),gx*0.05);','c.rgb*=mix(1.0,0.93+0.07*sin(vUv.y*800.0),gx*0.4);','float eL=length(texture2D(tD,uv+vec2(-0.003,0.0)).rgb);float eR=length(texture2D(tD,uv+vec2(0.003,0.0)).rgb);float eU=length(texture2D(tD,uv+vec2(0.0,0.003)).rgb);float eD=length(texture2D(tD,uv+vec2(0.0,-0.003)).rgb);float edge=abs(eL-eR)+abs(eU-eD);c.rgb+=vec3(0.9,0.5,0.3)*edge*gx*2.5*h(vec2(floor(vUv.y*250.0),t*10.0));','c.r+=mp*sin(t*4.0)*gx*0.2;c.b-=mp*sin(t*4.0)*gx*0.2;','float fl=step(0.99,h(vec2(floor(vUv.y*40.0+20.0),floor(t*12.0))));c.rgb=mix(c.rgb,vec3(0.85,0.6,0.4),fl*gx*0.4*(mp*0.6+0.4));','c.rgb+=(h(vUv*1000.0+t*100.0)-.5)*fx*.08;','float vig=1.0-length(vUv-vec2(0.5))*1.2;c.rgb*=mix(1.0,max(0.0,vig*vig),fx*0.3);','gl_FragColor=c;}'].join('\n');
+
+function init(){
+  var ct=document.getElementById('viewport');
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x0a0a0f);
+  cam=new THREE.PerspectiveCamera(30,ct.clientWidth/ct.clientHeight,.01,100);cam.position.set(0,0.9,1.6);
+  ren=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+  ren.setSize(ct.clientWidth,ct.clientHeight);ren.setPixelRatio(Math.min(devicePixelRatio,2));
+  ren.outputEncoding=THREE.sRGBEncoding;ren.toneMapping=THREE.ACESFilmicToneMapping;ren.toneMappingExposure=1.0;
+  ct.insertBefore(ren.domElement,ct.firstChild);
+  ambL=new THREE.AmbientLight(0xffffff,0.5);scene.add(ambL);
+  keyL=new THREE.DirectionalLight(0xfff0e0,1.0);keyL.position.set(1,2,3);scene.add(keyL);
+  fillL=new THREE.DirectionalLight(0xe0eeff,0.5);fillL.position.set(-2,1,0);scene.add(fillL);
+  var rim=new THREE.DirectionalLight(0xffd0a0,0.3);rim.position.set(0,1,-2);scene.add(rim);
+  var dn=false,px=0,py=0,th=0,ph=Math.PI/2,di=1.6,tg=new THREE.Vector3(0,0.88,0);
+  ren.domElement.addEventListener('pointerdown',function(e){dn=true;px=e.clientX;py=e.clientY});
+  window.addEventListener('pointerup',function(){dn=false});
+  window.addEventListener('pointermove',function(e){if(dn){th-=(e.clientX-px)*.005;ph-=(e.clientY-py)*.005;ph=Math.max(.1,Math.min(Math.PI-.1,ph));px=e.clientX;py=e.clientY;}mouseX=(e.clientX/window.innerWidth)*2-1;mouseY=(e.clientY/window.innerHeight)*2-1;});
+  ren.domElement.addEventListener('wheel',function(e){di*=(1+e.deltaY*.001);di=Math.max(.3,Math.min(8,di));e.preventDefault()},{passive:false});
+  var pr=Math.min(devicePixelRatio,2);var w=ct.clientWidth,h=ct.clientHeight;
+  rt=new THREE.WebGLRenderTarget(w*pr,h*pr);
+  normalMat=new THREE.ShaderMaterial({uniforms:{tD:{value:rt.texture},t:{value:0},fx:{value:.5}},vertexShader:ppVert,fragmentShader:normalFrag,depthTest:false});
+  glitchMat=new THREE.ShaderMaterial({uniforms:{tD:{value:rt.texture},t:{value:0},fx:{value:.5},talkMix:{value:0}},vertexShader:ppVert,fragmentShader:glitchFrag,depthTest:false});
+  ppMesh=new THREE.Mesh(new THREE.PlaneGeometry(2,2),normalMat);
+  fsc=new THREE.Scene();fsc.add(ppMesh);fcam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+  function frame(){
+    requestAnimationFrame(frame);
+    if(mixer)mixer.update(clock.getDelta());
+    if(modelRoot){currentRotY+=(mouseX*0.08-currentRotY)*0.03;currentRotX+=(-mouseY*0.04-currentRotX)*0.03;modelRoot.rotation.y=Math.PI+currentRotY;modelRoot.rotation.x=currentRotX;}
+    cam.position.set(tg.x+di*Math.sin(ph)*Math.sin(th),tg.y+di*Math.cos(ph),tg.z+di*Math.sin(ph)*Math.cos(th));cam.lookAt(tg);
+    var targetMix=talking?1.0:0.0;glitchTalkMix+=(targetMix-glitchTalkMix)*0.08;
+    if(fxMode==='glitch'){ppMesh.material=glitchMat;glitchMat.uniforms.t.value=clock.elapsedTime;glitchMat.uniforms.fx.value=fxAmount;glitchMat.uniforms.talkMix.value=glitchTalkMix;}
+    else{ppMesh.material=normalMat;normalMat.uniforms.t.value=clock.elapsedTime;normalMat.uniforms.fx.value=fxAmount;}
+    ren.setRenderTarget(rt);ren.render(scene,cam);ren.setRenderTarget(null);ren.render(fsc,fcam);
+    if(fxMode==='ascii')renderASCII();
+    if(fxMode==='engrave')renderEngrave();
+  }
+  frame();
+  window.addEventListener('resize',onResize);
+  var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';s.onload=function(){window._gl=true};document.head.appendChild(s);
+  initFXCanvas();
+}
+function onResize(){var ct=document.getElementById('viewport');var w=ct.clientWidth,h=ct.clientHeight,p=Math.min(devicePixelRatio,2);cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);rt.setSize(w*p,h*p);initFXCanvas();}
+
+var fxCanvas,fxCtx,pixelBuf=null;
+var asciiChars=' .,:-~=+*!&#%$@';
+function initFXCanvas(){fxCanvas=document.getElementById('fx-canvas');fxCanvas.width=document.getElementById('viewport').clientWidth;fxCanvas.height=document.getElementById('viewport').clientHeight;fxCtx=fxCanvas.getContext('2d');}
+function readPixels(){var glW=rt.width,glH=rt.height;if(!pixelBuf||pixelBuf.length!==glW*glH*4)pixelBuf=new Uint8Array(glW*glH*4);ren.setRenderTarget(rt);ren.readRenderTargetPixels(rt,0,0,glW,glH,pixelBuf);ren.setRenderTarget(null);}
+
+// === ASCII ===
+function renderASCII(){
+  if(!fxCtx||fxMode!=='ascii')return;
+  var w=fxCanvas.width,h=fxCanvas.height;fxCtx.fillStyle='#0a0a0f';fxCtx.fillRect(0,0,w,h);
+  readPixels();var glW=rt.width,glH=rt.height;
+  var cellW=Math.max(3,Math.round(4+(1-fxAmount)*4)),cellH=Math.max(5,Math.round(cellW*1.8));
+  var cols=Math.floor(w/cellW),rows=Math.floor(h/cellH);
+  fxCtx.font='bold '+cellH+'px Courier New';fxCtx.textBaseline='top';var nC=asciiChars.length;
+  for(var row=0;row<rows;row++){for(var col=0;col<cols;col++){
+    var sx=Math.floor((col/cols)*glW),sy=Math.floor((1-row/rows)*glH),idx=(sy*glW+sx)*4;
+    var r=pixelBuf[idx],g=pixelBuf[idx+1],b=pixelBuf[idx+2],lum=(0.299*r+0.587*g+0.114*b)/255;
+    if(lum<0.02)continue;var ci=Math.min(nC-1,Math.max(0,Math.floor(lum*(nC-1))));
+    fxCtx.fillStyle='rgb('+Math.floor(8+lum*75)+','+Math.floor(30+lum*155)+','+Math.floor(80+lum*175)+')';
+    fxCtx.fillText(asciiChars[ci],col*cellW,row*cellH);
+  }}
+  fxCtx.strokeStyle='rgba(30,70,140,0.05)';fxCtx.lineWidth=1;
+  for(var gx=0;gx<w;gx+=40){fxCtx.beginPath();fxCtx.moveTo(gx,0);fxCtx.lineTo(gx,h);fxCtx.stroke();}
+  for(var gy=0;gy<h;gy+=40){fxCtx.beginPath();fxCtx.moveTo(0,gy);fxCtx.lineTo(w,gy);fxCtx.stroke();}
+  fxCtx.fillStyle='rgba(0,0,0,0.05)';for(var y=0;y<h;y+=3)fxCtx.fillRect(0,y,w,1);
+  var grad=fxCtx.createRadialGradient(w/2,h/2,w*0.2,w/2,h/2,w*0.65);
+  grad.addColorStop(0,'rgba(0,0,0,0)');grad.addColorStop(1,'rgba(0,0,0,0.5)');
+  fxCtx.fillStyle=grad;fxCtx.fillRect(0,0,w,h);
+}
+
+// === ENGRAVE — crosshatch engraving ===
+function renderEngrave(){
+  if(!fxCtx||fxMode!=='engrave')return;
+  var w=fxCanvas.width,h=fxCanvas.height;
+  // Parchment-tinted background
+  fxCtx.fillStyle='#f5f0e8';
+  fxCtx.fillRect(0,0,w,h);
+  readPixels();var glW=rt.width,glH=rt.height;
+
+  var cellSize=Math.round(4+(1-fxAmount)*6); // 4-10px sampling grid
+  var cols=Math.floor(w/cellSize);
+  var rows=Math.floor(h/cellSize);
+
+  // Hatching line angles (in radians)
+  // Layer 1: 45° diagonal  Layer 2: 135°  Layer 3: horizontal  Layer 4: vertical
+  var angles=[Math.PI*0.25, Math.PI*0.75, 0, Math.PI*0.5];
+  var lineLen=cellSize*1.4;
+
+  fxCtx.lineCap='round';
+
+  for(var row=0;row<rows;row++){
+    for(var col=0;col<cols;col++){
+      var sx=Math.floor((col/cols)*glW);
+      var sy=Math.floor((1-row/rows)*glH);
+      var idx=(sy*glW+sx)*4;
+      var r=pixelBuf[idx],g=pixelBuf[idx+1],b=pixelBuf[idx+2];
+      var lum=(0.299*r+0.587*g+0.114*b)/255;
+
+      if(lum<0.02)continue; // skip pure black (background)
+
+      // Invert: dark image = dense lines (like ink on paper)
+      var darkness=1.0-lum;
+
+      // How many hatch layers based on darkness:
+      // 0.0-0.15: 1 layer (light shading)
+      // 0.15-0.35: 2 layers (cross-hatch)
+      // 0.35-0.6: 3 layers (dense cross-hatch)
+      // 0.6+: 4 layers (very dense, almost solid)
+      var numLayers;
+      if(darkness<0.15) numLayers=1;
+      else if(darkness<0.35) numLayers=2;
+      else if(darkness<0.6) numLayers=3;
+      else numLayers=4;
+
+      var cx=col*cellSize+cellSize/2;
+      var cy=row*cellSize+cellSize/2;
+
+      // Line weight: thicker for darker areas
+      var lineW=0.5+darkness*1.5;
+
+      // Ink color: dark sepia brown
+      var inkR=Math.floor(30+darkness*15);
+      var inkG=Math.floor(20+darkness*10);
+      var inkB=Math.floor(15+darkness*8);
+      fxCtx.strokeStyle='rgb('+inkR+','+inkG+','+inkB+')';
+      fxCtx.lineWidth=lineW;
+
+      for(var layer=0;layer<numLayers;layer++){
+        var a=angles[layer];
+        var dx=Math.cos(a)*lineLen*0.5;
+        var dy=Math.sin(a)*lineLen*0.5;
+        fxCtx.beginPath();
+        fxCtx.moveTo(cx-dx,cy-dy);
+        fxCtx.lineTo(cx+dx,cy+dy);
+        fxCtx.stroke();
+      }
+    }
+  }
+
+  // Subtle paper texture — faint noise via scattered dots
+  fxCtx.fillStyle='rgba(120,100,80,0.03)';
+  for(var i=0;i<w*h*0.001;i++){
+    fxCtx.fillRect(Math.random()*w,Math.random()*h,1,1);
+  }
+
+  // Vignette — subtle darkening at edges
+  var grad=fxCtx.createRadialGradient(w/2,h/2,w*0.25,w/2,h/2,w*0.65);
+  grad.addColorStop(0,'rgba(0,0,0,0)');
+  grad.addColorStop(1,'rgba(60,40,20,0.2)');
+  fxCtx.fillStyle=grad;
+  fxCtx.fillRect(0,0,w,h);
+}
+
+// === MODEL ===
+function loadFile(file){var r=new FileReader();r.onload=function(e){(function w(){if(window._gl)doParse(e.target.result);else setTimeout(w,100)})()};r.readAsArrayBuffer(file);}
+function doParse(buf){
+  new THREE.GLTFLoader().parse(buf,'',function(gltf){
+    gltf.scene.rotation.y=Math.PI;scene.add(gltf.scene);modelRoot=gltf.scene;
+    mixer=new THREE.AnimationMixer(gltf.scene);var clips=gltf.animations;
+    if(clips.length===1){var full=clips[0];
+      if(THREE.AnimationUtils&&THREE.AnimationUtils.subclip){
+        talkAct=mixer.clipAction(THREE.AnimationUtils.subclip(full,'talking',1,162,24));talkAct.setLoop(THREE.LoopRepeat);
+        idleAct=mixer.clipAction(THREE.AnimationUtils.subclip(full,'idle',163,600,24));idleAct.setLoop(THREE.LoopRepeat);
+      }else{idleAct=mixer.clipAction(full);idleAct.setLoop(THREE.LoopRepeat);talkAct=idleAct;}
+    }else{clips.forEach(function(c){var n=c.name.toLowerCase();
+      if(n.indexOf('idle')!==-1){idleAct=mixer.clipAction(c);idleAct.setLoop(THREE.LoopRepeat);}
+      else if(n.indexOf('talk')!==-1){talkAct=mixer.clipAction(c);talkAct.setLoop(THREE.LoopRepeat);}
+    });if(!idleAct&&clips.length>0){idleAct=mixer.clipAction(clips[0]);idleAct.setLoop(THREE.LoopRepeat);}if(!talkAct)talkAct=idleAct;}
+    if(idleAct)idleAct.play();
+    var box=new THREE.Box3().setFromObject(gltf.scene);var cen=box.getCenter(new THREE.Vector3());var sz=box.getSize(new THREE.Vector3());
+    cam.position.set(cen.x,cen.y+sz.y*0.05,cen.z+sz.y*0.9);cam.lookAt(cen.x,cen.y+sz.y*0.05,cen.z);
+    document.getElementById('overlay').classList.add('hidden');setMode('ascii');
+  });
+}
+
+function xfade(a,b,d){if(!a||!b||a===b)return;b.reset();b.setEffectiveWeight(1);b.play();a.crossFadeTo(b,d||0.8,true);}
+function toTalk(){if(talking)return;talking=true;xfade(idleAct,talkAct,0.8);document.getElementById('dot-indicator').classList.add('on');document.getElementById('status-label').textContent='talking';}
+function toIdle(){if(!talking)return;talking=false;xfade(talkAct,idleAct,1.0);document.getElementById('dot-indicator').classList.remove('on');document.getElementById('status-label').textContent='idle';}
+function sendMessage(){var el=document.getElementById('chat-input');var t=el.value.trim();if(!t||!speechSynthesis)return;speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.rate=0.95;u.onstart=toTalk;u.onend=toIdle;u.onerror=toIdle;speechSynthesis.speak(u);el.value='';}
+function toggleMic(){
+  if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){alert('Speech recognition not supported');return;}
+  if(isListening){if(recognition)recognition.stop();return;}
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  recognition=new SR();recognition.continuous=false;recognition.interimResults=true;recognition.lang='en-US';
+  recognition.onstart=function(){isListening=true;document.getElementById('mic-btn').classList.add('listening');};
+  recognition.onresult=function(e){var tr='';for(var i=e.resultIndex;i<e.results.length;i++)tr+=e.results[i][0].transcript;document.getElementById('chat-input').value=tr;};
+  recognition.onend=function(){isListening=false;document.getElementById('mic-btn').classList.remove('listening');var t=document.getElementById('chat-input').value.trim();if(t)sendMessage();};
+  recognition.onerror=function(){isListening=false;document.getElementById('mic-btn').classList.remove('listening');};
+  recognition.start();
+}
+
+document.getElementById('fi').addEventListener('change',function(e){var f=e.target.files[0];if(f)loadFile(f)});
+document.getElementById('chat-input').addEventListener('keydown',function(e){if(e.code==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
+document.addEventListener('keydown',function(e){if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;if(e.code==='Space'){e.preventDefault();if(talking)toIdle();else toTalk();}if(e.code==='Digit2')setMode('ascii');if(e.code==='Digit3')setMode('glitch');if(e.code==='Digit4')setMode('engrave');});
+init();
+</script>
+</body>
+</html>
