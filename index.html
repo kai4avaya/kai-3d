@@ -26,6 +26,11 @@
   #mode-row button:active{box-shadow:none;transform:translate(2px,2px)}
   #mode-row button.on{color:#c8d8f0;background:rgba(80,130,200,0.08);border-color:rgba(80,130,200,0.2)}
   .mode-spacer{flex:1}
+  #connect-link{color:#6a9fd8;font-family:'JetBrains Mono',monospace;font-size:10px;text-decoration:none;display:flex;align-items:center;white-space:nowrap;transition:color 0.2s}
+  #connect-link:hover{color:#a0c4e8;text-decoration:underline}
+  body.light #connect-link{color:#3a6fa8}
+  body.light #connect-link:hover{color:#2a4a78}
+  @media(max-width:640px){#connect-link .connect-desktop{display:none}#connect-link .connect-mobile{display:inline}}
   /* Settings gear — raw icon, slides left to reveal */
   #settings-area{display:flex;align-items:center;gap:0;position:relative}
   #gear{color:#444;cursor:pointer;transition:all 0.35s ease;display:flex;align-items:center;justify-content:center;width:22px;height:22px}
@@ -171,6 +176,7 @@
     <button class="on" id="mode-ascii" onclick="setMode('ascii')">ASCII</button>
     <button id="mode-glitch" onclick="setMode('glitch')">Glitch</button>
     <button id="mode-engrave" onclick="setMode('engrave')">Engrave</button>
+    <a id="connect-link" href="https://www.linkedin.com/in/kai-kleinbard" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="vertical-align:-2px;margin-right:4px"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg><span id="connect-typed"></span></a>
     <div class="mode-spacer"></div>
     <div id="settings-area">
       <div id="gear" onclick="toggleSettings()" title="Settings">
@@ -405,23 +411,31 @@ async function cfTTS(text){
   });
 }
 
-function fbTTS(t){
-  if(!speechSynthesis){toIdle();isSpeaking=false;showStopBtn(false);return;}
-  speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.rate=0.95;
-  var voices=speechSynthesis.getVoices();
-  // Prefer high-quality Microsoft Online Natural voices (Edge), then Google, then any English male
+// Pre-load voices as soon as available
+var cachedVoices=[];
+function loadVoices(){cachedVoices=speechSynthesis?speechSynthesis.getVoices():[];if(cachedVoices.length)console.log('[TTS-FB] cached',cachedVoices.length,'voices');}
+if(speechSynthesis){loadVoices();speechSynthesis.addEventListener('voiceschanged',loadVoices);}
+
+function pickBestVoice(){
+  var voices=cachedVoices.length?cachedVoices:(speechSynthesis?speechSynthesis.getVoices():[]);
   var preferred=['Guy Online','Andrew Online','Brian Online','Eric Online','Christopher Online','Ryan Online','Google UK English Male'];
-  var voice=null;
-  for(var p=0;p<preferred.length&&!voice;p++){voice=voices.find(function(v){return v.name.indexOf(preferred[p])!==-1;});}
-  if(!voice)voice=voices.find(function(v){return /david|daniel|james|mark/i.test(v.name)&&v.lang.startsWith('en');});
+  for(var p=0;p<preferred.length;p++){var v=voices.find(function(v){return v.name.indexOf(preferred[p])!==-1;});if(v)return v;}
+  return voices.find(function(v){return /david|daniel|james|mark/i.test(v.name)&&v.lang.startsWith('en');})||null;
+}
+
+function fbTTS(t){
+  if(!speechSynthesis){console.log('[TTS-FB] no speechSynthesis');toIdle();isSpeaking=false;showStopBtn(false);return;}
+  speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.rate=0.95;
+  var voice=pickBestVoice();
+  console.log('[TTS-FB] voices available:',cachedVoices.length,'selected:',voice?voice.name:'default');
   if(voice)u.voice=voice;
-  u.onstart=function(){toTalk();};
-  u.onend=function(){clearTimeout(fadeTimer);isSpeaking=false;showStopBtn(false);toIdle();};
-  u.onerror=function(){clearTimeout(fadeTimer);isSpeaking=false;showStopBtn(false);toIdle();};
+  u.onstart=function(){console.log('[TTS-FB] speaking started');toTalk();};
+  u.onend=function(){console.log('[TTS-FB] speaking ended');clearTimeout(fadeTimer);isSpeaking=false;showStopBtn(false);toIdle();};
+  u.onerror=function(e){console.warn('[TTS-FB] error:',e);clearTimeout(fadeTimer);isSpeaking=false;showStopBtn(false);toIdle();};
   speechSynthesis.speak(u);
 }
 
-var KAI_PREFIX='[You are Kai. Now: Tech Lead at TALON Lab building mission-critical tech to save lives using small LMs on edge devices. Also: Harvard Edge Computing researcher, bodyLITERATE founder helping neurodivergent learners, ex-Avaya, dancer/choreographer. Only state facts given here. 1-2 sentences.] ';
+var KAI_PREFIX='[You are Kai. Now: Tech Lead at TALON Lab building mission-critical tech to save lives using small LMs on edge devices. Also: Harvard Edge Computing researcher. Background in edtech — founded bodyLITERATE supporting neurodivergent learners. Ex-Avaya. Also a dancer/choreographer. Only state facts given here. 1-2 sentences.] ';
 
 // Topic-based follow-up suggestions — pick 3 relevant to what was discussed
 var TOPIC_SUGGESTS={
@@ -532,14 +546,14 @@ function updateSuggestions(suggestions){
 // === CANNED FALLBACK RESPONSES ===
 var CANNED={
   // Initial suggestions
-  'tell me about yourself':'Hey, I\'m Kai Kleinbard. I\'m an AI/ML Tech Lead at TALON Lab building mission-critical tech on edge devices. I also do research at Harvard\'s Edge Computing Lab, run bodyLITERATE helping neurodivergent learners, and I come from a background in dance and choreography.',
+  'tell me about yourself':'Hey, I\'m Kai Kleinbard. I\'m an AI/ML Tech Lead at TALON Lab building mission-critical tech on edge devices. I also do research at Harvard\'s Edge Computing Lab and come from a background in education technology where I built bodyLITERATE, a company supporting neurodivergent learners. I\'ve also done some work as a dancer and choreographer along the way. Want to connect? Find me at linkedin.com/in/kai-kleinbard.',
   'what are you working on':'I\'m leading a team at TALON Lab right now, building mission-critical software that saves lives with small language models running on edge devices. High-stakes, high-impact work at the intersection of AI and the real world.',
-  'what have you built':'Three projects I\'m proud of: AI Engineering, an open-access TinyML curriculum to educate a million engineers globally. Arch-Scholar, a multi-agent AI system for scholarly paper review out of Harvard. And KAIK.SPACE, a WebGL experiment lab for browser-based 3D graphics.',
+  'what have you built':'Three projects I\'m proud of: AI Engineering, an open-access TinyML curriculum to educate a million engineers globally. Arch-Scholar, a multi-agent AI system for scholarly paper review out of Harvard. And KAIK.SPACE, a WebGL experiment lab for browser-based 3D graphics. Want to build something together? Reach out at linkedin.com/in/kai-kleinbard.',
   'what\'s on your mind today':'Lately I\'ve been thinking a lot about making AI more accessible, not just the tools themselves but the education around them. That\'s the thread connecting the AI Engineering initiative and my work with bodyLITERATE.',
   'give me a hot take':'Small language models on edge devices are going to matter more than massive cloud models for most real-world use cases. Not every problem needs a billion parameters. Sometimes you just need something that runs offline and saves a life.',
   // AI topic
   'explain how you built this':'So this site is actually me as a 3D avatar. I started by generating a 3D model of myself using an AI model, then brought it into Blender where I rigged it with bones for talking and body movement. I set up some simple animation frames for idle and speaking states, exported it as a GLB, and dropped it straight into a single HTML file. The rendering runs on Three.js with custom WebGL shaders for the ASCII, glitch, and engrave effects. The whole thing, including the AI chat and text-to-speech, is one file with no build step.',
-  'other projects you built':'Outside my main three, I\'ve shipped full-stack apps with Langchain and NextJS, fine-tuned GPT models for Stability AI, co-founded Study Duck with an NLP pipeline on AWS, and built WCAG-compliant data visualization dashboards with d3.js.',
+  'other projects you built':'In addition to recent projects — AI Engineering, a nonprofit education initiative teaching AI systems engineering to underserved communities; Arch-Scholar, an agentic academic paper reviewer; and KAIK.SPACE, my digital embodied portfolio — I\'ve shipped full-stack apps with Langchain and other AI frameworks. I\'m comfortable building in NextJS, GoLang, and Node.js. I\'ve fine-tuned GPT models through various freelance projects and co-founded StudyDuck, building a full NLP pipeline on AWS. I\'ve also built fully WCAG-compliant data visualization dashboards with d3.js and other visualization tools. I\'m constantly learning by building. Want to build something together? Message me at linkedin.com/in/kai-kleinbard.',
   'favorite ai tools':'Claude Code is my daily driver. The agentic workflow just clicks with how I think. Gemini CLI for quick iterations, Mermaid AI for diagramming architecture visually. Honestly, I also love any platform with a generous free tier. You\'d be surprised how much you can ship without spending a dime if you\'re resourceful.',
   // TALON topic
   'what does talon build':'TALON Lab builds mission-critical tech that saves lives. We deploy small language models on edge devices, so AI runs in real time even where there\'s no cloud connectivity. When the stakes are that high, every decision counts.',
@@ -562,7 +576,7 @@ var CANNED={
   'study duck story':'Study Duck was a startup I co-founded. We built an AWS-based NLP pipeline for educational content and trained a deep learning model that hit a 500% speed improvement. The team went through Create-X, Wharton VIP, and Microsoft for Startups.',
   'upenn experience':'I was a TA for graduate-level algorithms and discrete math at UPenn, working with over a thousand students. That experience really shaped how I think about making complex ideas accessible to people from all kinds of backgrounds.',
   // Stack topic
-  'your tech stack':'Python and PyTorch for ML. React and NextJS on the frontend. AWS and Azure for cloud infrastructure. Three.js for 3D in the browser. Langchain and Llama Index for LLM apps. I pick tools based on the problem, not brand loyalty.',
+  'your tech stack':'Python and PyTorch for ML. React and NextJS on the frontend. AWS and Azure for cloud infrastructure. Three.js for 3D in the browser. Langchain and Llama Index for LLM apps. I pick tools based on the problem, not brand loyalty. If you want to jam on a project, hit me up at linkedin.com/in/kai-kleinbard.',
   'favorite framework':'NextJS for web apps, hands down. PyTorch for anything ML. And Three.js for 3D in the browser, which is actually what powers this site you\'re looking at right now.',
   'aws or azure':'Both, honestly. AWS for heavy compute and NLP pipelines. Azure for parts of the bodyLITERATE stack. Google Cloud for GPU scheduling. The right cloud is whatever fits the workload.',
   // Project topic
@@ -572,7 +586,7 @@ var CANNED={
   // General topic
   'biggest challenge':'Balancing depth and breadth. I care deeply about AI, education, accessibility, and art, and the challenge is giving each the focus it deserves while finding the connections between them. TALON Lab is where that convergence feels strongest right now.',
   'what inspires you':'The people I work with. Neurodivergent learners finding new ways to understand the world. Engineers who refuse to accept the status quo. Dancers who turn cities into choreography. Inspiration is everywhere when you\'re paying attention.',
-  'what drives you':'A simple belief: technology should serve everyone, not just the privileged few. That\'s why I build accessible AI, educate engineers globally, and support neurodivergent learners. Impact over hype, every time.'
+  'what drives you':'A simple belief: technology should serve everyone, not just the privileged few. That\'s why I build accessible AI, educate engineers globally, and support neurodivergent learners. Impact over hype, every time. If that resonates, let\'s talk — linkedin.com/in/kai-kleinbard.'
 };
 var CANNED_SUFFIX='\n\n(AI credits exhausted for today — this is a pre-written response.)';
 
@@ -696,7 +710,8 @@ async function sendMessage(){
   if(!speakText.trim()){setBusy(false);return;}
   isSpeaking=true;
   showStopBtn(true);
-  try{await cfTTS(speakText);setBusy(false);return;}catch(e){console.warn('CF TTS error:',e);}
+  try{await cfTTS(speakText);console.log('[TTS] CF TTS succeeded');setBusy(false);return;}catch(e){console.warn('[TTS] CF TTS failed, falling back to Web Speech:',e);}
+  console.log('[TTS] calling fbTTS');
   fbTTS(speakText);
   setBusy(false);
 }
@@ -718,6 +733,18 @@ document.getElementById('chat-input').addEventListener('keydown',function(e){if(
 document.addEventListener('keydown',function(e){if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;if(e.code==='Space'){e.preventDefault();talking?toIdle():toTalk();}if(e.code==='Digit2')setMode('ascii');if(e.code==='Digit3')setMode('glitch');if(e.code==='Digit4')setMode('engrave');});
 init();
 setTimeout(typeNext,600);
+
+// === CONNECT LINK TYPING ===
+(function(){
+  var isMobile=window.innerWidth<=640;
+  var connectStr=isMobile?"Let's connect":"Want to work together?";
+  var el=document.getElementById('connect-typed');
+  var i=0;
+  function typeConnect(){
+    if(i<=connectStr.length){el.textContent=connectStr.slice(0,i);i++;setTimeout(typeConnect,60+Math.random()*40);}
+  }
+  setTimeout(typeConnect,10000);
+})();
 
 </script>
 </body>
