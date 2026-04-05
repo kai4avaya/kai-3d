@@ -340,8 +340,10 @@ function init(){
   scene.add(new THREE.DirectionalLight(0xffd0a0,0.3)).position.set(0,1,-2);
   var px=0,py=0,th=0,ph=Math.PI/2;
   di=1.6;tg=new THREE.Vector3(0,0.88,0);
-  ren.domElement.addEventListener('pointerdown',function(e){dn=true;px=e.clientX;py=e.clientY});
-  window.addEventListener('pointerup',function(){dn=false});
+  ren.domElement.style.touchAction='none';
+  ren.domElement.addEventListener('pointerdown',function(e){dn=true;px=e.clientX;py=e.clientY;});
+  window.addEventListener('pointerup',function(){dn=false;});
+  window.addEventListener('pointercancel',function(){dn=false;});
   window.addEventListener('pointermove',function(e){
     if(dn){var spd=isMob?.01:.005;th-=(e.clientX-px)*spd;ph-=(e.clientY-py)*spd;ph=Math.max(.1,Math.min(Math.PI-.1,ph));px=e.clientX;py=e.clientY;}
     mouseX=(e.clientX/window.innerWidth)*2-1;mouseY=(e.clientY/window.innerHeight)*2-1;
