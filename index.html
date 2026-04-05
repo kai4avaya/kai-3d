@@ -150,6 +150,22 @@
     .proj-card{position:static;width:110px}
     .proj-card .proj-title{font-size:8px}
     .proj-card .proj-desc{font-size:7px}
+    /* Mobile chat layout */
+    #chat-bar{padding:6px 10px 10px}
+    #mode-row{flex-wrap:wrap;gap:4px}
+    #mode-row button{padding:3px 8px;font-size:9px}
+    #connect-link{font-size:8px}
+    #settings-drawer.open{max-width:200px}
+    .s-row input[type="range"]{width:35px}
+    .s-row label{font-size:8px}
+    .s-row select{font-size:8px}
+    #suggestions{gap:4px;margin-bottom:6px}
+    .suggestion{padding:4px 8px;font-size:9px}
+    #chat-input{padding:8px 100px 8px 10px;font-size:11px;height:44px}
+    #chat-log{max-height:70px;font-size:10px}
+    #header h1{font-size:18px}
+    #resume-card{width:110px}
+    #resume-card .resume-preview{height:130px}
   }
   /* Theme toggle button */
   #theme-toggle{position:fixed;top:14px;right:20px;z-index:200;width:32px;height:32px;border-radius:3px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#666;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;box-shadow:2px 2px 0 rgba(0,0,0,0.3)}
@@ -312,8 +328,9 @@ function init(){
   scene=new THREE.Scene();scene.background=new THREE.Color(isDark?0x0a0a0f:0xf0ede8);
   cam=new THREE.PerspectiveCamera(30,ct.clientWidth/ct.clientHeight,.01,100);cam.position.set(0,0.9,1.6);
   var isMob=window.innerWidth<=640;
+  var prMax=isMob?1.5:2;
   ren=new THREE.WebGLRenderer({antialias:!isMob,preserveDrawingBuffer:true});
-  ren.setSize(ct.clientWidth,ct.clientHeight);ren.setPixelRatio(Math.min(devicePixelRatio,isMob?1.5:2));
+  ren.setSize(ct.clientWidth,ct.clientHeight);ren.setPixelRatio(Math.min(devicePixelRatio,prMax));
   ren.outputEncoding=THREE.sRGBEncoding;ren.toneMapping=THREE.ACESFilmicToneMapping;ren.toneMappingExposure=1.0;
   ren.domElement.style.position='relative';ren.domElement.style.zIndex='2';
   ct.insertBefore(ren.domElement,ct.firstChild);
@@ -332,7 +349,7 @@ function init(){
     mouseUvX=(e.clientX-vpR.left)/vpR.width;mouseUvY=1.0-(e.clientY-vpR.top)/vpR.height;
   });
   ren.domElement.addEventListener('wheel',function(e){di*=(1+e.deltaY*.001);di=Math.max(.3,Math.min(8,di));e.preventDefault()},{passive:false});
-  var pr=Math.min(devicePixelRatio,isMob?1.5:2),w=ct.clientWidth,h=ct.clientHeight;
+  var pr=Math.min(devicePixelRatio,prMax),w=ct.clientWidth,h=ct.clientHeight;
   rt=new THREE.WebGLRenderTarget(w*pr,h*pr);
   var mp=new THREE.Vector2(0.5,0.5);
   normalMat=new THREE.ShaderMaterial({uniforms:{tD:{value:rt.texture},t:{value:0},fx:{value:.5},mPos:{value:mp}},vertexShader:ppVert,fragmentShader:normalFrag,depthTest:false});
@@ -352,7 +369,7 @@ function init(){
     ren.setRenderTarget(rt);ren.render(scene,cam);ren.setRenderTarget(null);ren.render(fsc,fcam);
     if(fxMode==='ascii')renderASCII();
   })();
-  window.addEventListener('resize',function(){var c=document.getElementById('viewport'),w=c.clientWidth,h=c.clientHeight,p=Math.min(devicePixelRatio,2);cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);rt.setSize(w*p,h*p);engraveMat.uniforms.res.value.set(w*p,h*p);initFC();});
+  window.addEventListener('resize',function(){var c=document.getElementById('viewport'),w=c.clientWidth,h=c.clientHeight,p=Math.min(devicePixelRatio,prMax);cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);rt.setSize(w*p,h*p);engraveMat.uniforms.res.value.set(w*p,h*p);initFC();});
   var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';s.onload=function(){window._gl=true;autoLoadGLB();};document.head.appendChild(s);
   initFC();
 }
@@ -366,17 +383,21 @@ function renderASCII(){
   if(!fxX||fxMode!=='ascii')return;
   var w=fxC.width,h=fxC.height;fxX.fillStyle=isDark?'#0a0a0f':'#f0ede8';fxX.fillRect(0,0,w,h);
   rP();var gW=rt.width,gH=rt.height;
-  var cW=Math.max(3,Math.round(4+(1-fxAmount)*4)),cH=Math.max(5,Math.round(cW*1.8));
+  if(!pxB||pxB.length!==gW*gH*4)return;
+  var mobAscii=window.innerWidth<=640;
+  var cW=Math.max(3,Math.round((mobAscii?6:4)+(1-fxAmount)*(mobAscii?5:4))),cH=Math.max(5,Math.round(cW*1.8));
   var cols=Math.floor(w/cW),rows=Math.floor(h/cH);
   fxX.font='bold '+cH+'px Courier New';fxX.textBaseline='top';var nC=aC.length;
   var now=performance.now()/1000;
   var rPr=0;if(revealStart>0){var el=now-revealStart;rPr=Math.min(1,el/3);rPr=rPr*rPr*(3-2*rPr);}
   var cx=w*.5,cy=h*.5,mD=Math.sqrt(cx*cx+cy*cy);
   var mCx=mouseUvX*w,mCy=(1-mouseUvY)*h,mR=w*0.1;
+  var maxIdx=gW*gH*4;
   for(var row=1;row<rows;row++){for(var col=0;col<cols;col++){
     var px=col*cW+cW*.5,py=row*cH+cH*.5;
     if(rPr<1){var dN=Math.sqrt((px-cx)*(px-cx)+(py-cy)*(py-cy))/mD;if(dN*0.3+cHash(col,row)*0.7>rPr)continue;}
-    var sx=Math.floor((col/cols)*gW),sy=Math.floor((1-row/rows)*gH),idx=(sy*gW+sx)*4;
+    var sx=Math.min(gW-1,Math.floor((col/cols)*gW)),sy=Math.min(gH-1,Math.floor((1-row/rows)*gH)),idx=(sy*gW+sx)*4;
+    if(idx<0||idx>=maxIdx)continue;
     var r=pxB[idx],g=pxB[idx+1],b=pxB[idx+2],lum=(0.299*r+0.587*g+0.114*b)/255;
     if(isDark){if(lum<0.02)continue;}else{if(lum>0.90)continue;lum=1.0-lum;}
     var ci=Math.min(nC-1,Math.max(0,Math.floor(lum*(nC-1))));
