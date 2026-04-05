@@ -82,7 +82,7 @@
   #project-overlay{position:absolute;inset:0;z-index:140;opacity:0;pointer-events:none;transition:opacity 0.4s ease}
   #project-overlay.visible{opacity:1}
   #project-overlay.visible .proj-card{pointer-events:auto}
-  .proj-card{position:absolute;width:150px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);box-shadow:0 2px 12px rgba(0,0,0,0.5);cursor:pointer;background:#111;transition:border-color 0.2s,opacity 0.4s ease}
+  .proj-card{position:absolute;width:150px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);box-shadow:0 2px 12px rgba(0,0,0,0.5);cursor:pointer;background:#111;transition:all 0.35s ease}
   .proj-card:hover{border-color:rgba(100,160,220,0.3)}
   .proj-card video{width:100%;display:block}
   .proj-card .proj-info{padding:5px 8px}
@@ -97,6 +97,53 @@
   body.light .proj-card:hover{border-color:rgba(40,100,180,0.3)}
   body.light .proj-card .proj-title{color:#2a5a8a}
   body.light .proj-card .proj-desc{color:#888}
+  /* Expand button on cards */
+  .proj-expand{position:absolute;bottom:4px;right:4px;width:20px;height:20px;border:none;border-radius:2px;background:rgba(0,0,0,0.5);color:#888;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:color 0.2s,background 0.2s;z-index:2}
+  .proj-expand:hover{color:#c8d8f0;background:rgba(0,0,0,0.7)}
+  .proj-expand svg{width:12px;height:12px;fill:currentColor}
+  body.light .proj-expand{background:rgba(255,255,255,0.6);color:#888}
+  body.light .proj-expand:hover{color:#2a5a8a;background:rgba(255,255,255,0.8)}
+  /* Expanded card state */
+  #proj-backdrop{position:absolute;inset:0;z-index:139;background:rgba(0,0,0,0.7);opacity:0;pointer-events:none;transition:opacity 0.3s}
+  #proj-backdrop.visible{opacity:1;pointer-events:auto}
+  body.light #proj-backdrop{background:rgba(240,237,232,0.8)}
+  .proj-card.expanded{position:fixed!important;left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%)!important;width:420px!important;max-width:90vw!important;z-index:200!important;transition:all 0.35s ease!important;box-shadow:0 8px 40px rgba(0,0,0,0.6)!important}
+  .proj-card.expanded video{width:100%}
+  .proj-card.expanded .proj-info{padding:12px 16px}
+  .proj-card.expanded .proj-title{font-size:13px!important;margin-bottom:6px}
+  .proj-card.expanded .proj-desc{font-size:11px!important;line-height:1.5}
+  .proj-card.expanded .proj-expand svg{transform:rotate(180deg)}
+  /* Resume overlay */
+  #resume-overlay{position:absolute;right:8%;bottom:12%;z-index:140;opacity:0;pointer-events:none;transition:opacity 0.4s ease}
+  #resume-overlay.visible{opacity:1;pointer-events:auto}
+  #resume-card{width:160px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);box-shadow:0 2px 12px rgba(0,0,0,0.5);cursor:pointer;background:#111;transition:all 0.35s ease;position:relative}
+  #resume-card:hover{border-color:rgba(100,160,220,0.3)}
+  #resume-card .resume-preview{width:100%;height:190px;background:#1a1a1a;position:relative;overflow:hidden}
+  #resume-card .resume-preview svg{width:32px;height:32px;fill:#555;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+  #resume-card .resume-preview iframe{position:absolute;top:0;left:0;width:400%;height:400%;border:none;transform:scale(0.25);transform-origin:top left;pointer-events:none}
+  #resume-card .proj-info{padding:5px 8px}
+  #resume-card .proj-title{font-size:9px;color:#c8d8f0;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;text-decoration:none;display:block}
+  #resume-card .proj-title:hover{text-decoration:underline}
+  #resume-card .proj-desc{font-size:8px;color:#666;font-family:'JetBrains Mono',monospace;line-height:1.3}
+  #resume-card .proj-expand{position:absolute;bottom:4px;right:4px;width:20px;height:20px;border:none;border-radius:2px;background:rgba(0,0,0,0.5);color:#888;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:color 0.2s;z-index:2}
+  #resume-card .proj-expand:hover{color:#c8d8f0}
+  #resume-card .proj-expand svg{width:12px;height:12px;fill:currentColor}
+  #resume-card.expanded{position:fixed!important;left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%)!important;width:600px!important;max-width:90vw!important;z-index:200!important;box-shadow:0 8px 40px rgba(0,0,0,0.6)!important;height:85vh;max-height:750px;display:flex;flex-direction:column}
+  #resume-card.expanded .resume-preview{flex:1;height:auto}
+  #resume-card.expanded .resume-preview iframe{position:static;width:100%;height:100%;transform:none;pointer-events:auto}
+  #resume-card.expanded .resume-preview svg{display:none}
+  #resume-card.expanded .proj-info{padding:8px 14px;display:flex;align-items:center;justify-content:space-between}
+  #resume-card.expanded .proj-title{display:none!important}
+  #resume-card.expanded .proj-desc{display:none!important}
+  .resume-dl{font-size:10px;color:#6a9fd8;font-family:'JetBrains Mono',monospace;text-decoration:none;white-space:nowrap;display:none}
+  .resume-dl:hover{text-decoration:underline}
+  #resume-card.expanded .resume-dl{display:inline}
+  body.light #resume-card{border-color:rgba(0,0,0,0.1);background:#f5f3ef;box-shadow:0 2px 12px rgba(0,0,0,0.1)}
+  body.light #resume-card .resume-preview{background:#e8e5e0}
+  body.light #resume-card .proj-title{color:#2a5a8a}
+  body.light #resume-card .proj-desc{color:#888}
+  body.light #resume-card .proj-expand{background:rgba(255,255,255,0.6)}
+  @media(max-width:640px){#resume-overlay{right:8px;bottom:auto;top:50%}}
   /* Mobile/small screens: stack vertically on right */
   @media(max-width:640px){
     #project-overlay{display:flex;flex-direction:column;gap:6px;right:8px;top:50%;left:auto;bottom:auto;transform:translateY(-50%)}
@@ -164,11 +211,13 @@
     <input type="file" id="fi" accept=".glb,.gltf">
   </div>
   <canvas id="fx-canvas"></canvas>
+  <div id="proj-backdrop" onclick="collapseCard();collapseResume()"></div>
   <div id="project-overlay">
-    <div class="proj-card" data-proj="ai-engineering" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><div class="proj-info"><a class="proj-title" href="https://community.mlsysbook.ai" target="_blank" rel="noopener" onclick="event.stopPropagation()">AI Engineering</a><div class="proj-desc">Educating 1M AI engineers by 2030 — open-access TinyML curriculum</div></div></div>
-    <div class="proj-card" data-proj="arch-scholar" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><div class="proj-info"><a class="proj-title" href="https://edge.seas.harvard.edu/" target="_blank" rel="noopener" onclick="event.stopPropagation()">Arch-Scholar</a><div class="proj-desc">Multi-agent AI system for automated scholarly paper review</div></div></div>
-    <div class="proj-card" data-proj="kaik-space" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><div class="proj-info"><a class="proj-title" href="https://kaik.space" target="_blank" rel="noopener" onclick="event.stopPropagation()">KAIK.SPACE</a><div class="proj-desc">WebGL experiment lab — spatial augmentation &amp; 3D portfolio</div></div></div>
+    <div class="proj-card" data-proj="ai-engineering" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><button class="proj-expand" onclick="event.stopPropagation();expandCard(this.parentElement)" title="Expand"><svg viewBox="0 0 24 24"><path d="M21 11V3h-8l3.29 3.29-10 10L3 13v8h8l-3.29-3.29 10-10z"/></svg></button><div class="proj-info"><a class="proj-title" href="https://community.mlsysbook.ai" target="_blank" rel="noopener" onclick="event.stopPropagation()">AI Engineering</a><div class="proj-desc">Educating 1M AI engineers by 2030 — open-access TinyML curriculum</div></div></div>
+    <div class="proj-card" data-proj="arch-scholar" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><button class="proj-expand" onclick="event.stopPropagation();expandCard(this.parentElement)" title="Expand"><svg viewBox="0 0 24 24"><path d="M21 11V3h-8l3.29 3.29-10 10L3 13v8h8l-3.29-3.29 10-10z"/></svg></button><div class="proj-info"><a class="proj-title" href="https://edge.seas.harvard.edu/" target="_blank" rel="noopener" onclick="event.stopPropagation()">Arch-Scholar</a><div class="proj-desc">Multi-agent AI system for automated scholarly paper review</div></div></div>
+    <div class="proj-card" data-proj="kaik-space" onclick="toggleProjCard(this)"><video muted loop playsinline preload="none"></video><button class="proj-expand" onclick="event.stopPropagation();expandCard(this.parentElement)" title="Expand"><svg viewBox="0 0 24 24"><path d="M21 11V3h-8l3.29 3.29-10 10L3 13v8h8l-3.29-3.29 10-10z"/></svg></button><div class="proj-info"><a class="proj-title" href="https://kaik.space" target="_blank" rel="noopener" onclick="event.stopPropagation()">KAIK.SPACE</a><div class="proj-desc">WebGL experiment lab — spatial augmentation &amp; 3D portfolio</div></div></div>
   </div>
+  <div id="resume-overlay"><div id="resume-card"><div class="resume-preview"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg><iframe id="resume-iframe" title="Resume"></iframe></div><button class="proj-expand" onclick="event.stopPropagation();expandResume()" title="Expand"><svg viewBox="0 0 24 24"><path d="M21 11V3h-8l3.29 3.29-10 10L3 13v8h8l-3.29-3.29 10-10z"/></svg></button><div class="proj-info"><span class="proj-title">Resume</span><div class="proj-desc">Kai Kleinbard — 2026</div><a class="resume-dl" href="public/papers/Kai_Kleinbard_resume_2026.pdf" download onclick="event.stopPropagation()">Download PDF</a></div></div></div>
 </div>
 <div id="chat-wrap">
 <div id="chat-bar">
@@ -515,6 +564,7 @@ function showProjects(){
 
 function hideProjects(){
   if(!projectsVisible)return;
+  collapseCard();
   projectsVisible=false;
   var overlay=document.getElementById('project-overlay');
   overlay.classList.remove('visible');
@@ -522,13 +572,67 @@ function hideProjects(){
 }
 
 function toggleProjCard(card){
+  if(card.classList.contains('expanded'))return;
   var video=card.querySelector('video');
   if(video.paused)video.play().catch(function(){});
   else video.pause();
 }
 
+var expandedCard=null;
+function expandCard(card){
+  if(expandedCard){collapseCard();return;}
+  expandedCard=card;
+  document.getElementById('proj-backdrop').classList.add('visible');
+  // Force a reflow so the transition animates from current position
+  card.getBoundingClientRect();
+  card.classList.add('expanded');
+  var video=card.querySelector('video');
+  if(video.paused)video.play().catch(function(){});
+}
+
+function collapseCard(){
+  if(!expandedCard)return;
+  expandedCard.classList.remove('expanded');
+  document.getElementById('proj-backdrop').classList.remove('visible');
+  expandedCard=null;
+}
+
 function isProjectQuestion(text){
-  return /\b(built|project|portfolio|ship|create|made|show|work.*on)\b/i.test(text);
+  return /\b(what have you built|projects? you built|other projects|show me.*project|your portfolio|kaik\.?space|arch.scholar|ai.engineer)\b/i.test(text);
+}
+
+// === RESUME OVERLAY ===
+var resumeVisible=false,resumeLoaded=false;
+function showResume(){
+  if(resumeVisible)return;
+  resumeVisible=true;
+  var overlay=document.getElementById('resume-overlay');
+  overlay.classList.add('visible');
+  if(!resumeLoaded){
+    document.getElementById('resume-iframe').src='public/papers/Kai_Kleinbard_resume_2026.pdf';
+    resumeLoaded=true;
+  }
+}
+function hideResume(){
+  if(!resumeVisible)return;
+  collapseResume();
+  resumeVisible=false;
+  document.getElementById('resume-overlay').classList.remove('visible');
+}
+function expandResume(){
+  var card=document.getElementById('resume-card');
+  if(card.classList.contains('expanded')){collapseResume();return;}
+  document.getElementById('proj-backdrop').classList.add('visible');
+  card.classList.add('expanded');
+}
+function collapseResume(){
+  var card=document.getElementById('resume-card');
+  if(!card.classList.contains('expanded'))return;
+  card.classList.remove('expanded');
+  document.getElementById('proj-backdrop').classList.remove('visible');
+}
+function isResumeQuestion(text){
+  return /\b(resume|cv|background|experience|education|qualification|job history|career|tell me about yourself|your story|who are you)\b/i.test(text);
 }
 
 function updateSuggestions(suggestions){
@@ -555,7 +659,7 @@ var CANNED={
   // AI topic
   'explain how you built this':'So this site is actually me as a 3D avatar. I started by generating a 3D model of myself using an AI model, then brought it into Blender where I rigged it with bones for talking and body movement. I set up some simple animation frames for idle and speaking states, exported it as a GLB, and dropped it straight into a single HTML file. The rendering runs on Three.js with custom WebGL shaders for the ASCII, glitch, and engrave effects. The whole thing, including the AI chat and text-to-speech, is one file with no build step.',
   'other projects you built':'In addition to recent projects — AI Engineering, a nonprofit education initiative teaching AI systems engineering to underserved communities; Arch-Scholar, an agentic academic paper reviewer; and KAIK.SPACE, my digital embodied portfolio — I\'ve shipped full-stack apps with Langchain and other AI frameworks. I\'m comfortable building in NextJS, GoLang, and Node.js. I\'ve fine-tuned GPT models through various freelance projects and co-founded StudyDuck, building a full NLP pipeline on AWS. I\'ve also built fully WCAG-compliant data visualization dashboards with d3.js and other visualization tools. I\'m constantly learning by building. Want to get in touch? Message me at linkedin.com/in/kai-kleinbard.',
-  'favorite ai tools':'Claude Code is my daily driver. The agentic workflow just clicks with how I think. Gemini CLI for quick iterations, Mermaid AI for diagramming architecture visually. Honestly, I also love any platform with a generous free tier. You\'d be surprised how much you can ship without spending a dime if you\'re resourceful.',
+  'favorite ai tools':'I try to use as many AI tools as I can. These include Claude Code for agentic coding workflows, Gemini CLI for fast prototyping and iteration, and Mermaid AI for visualizing architecture diagrams. I also still rely on editors like VS Code, Neovim, and Helix for reviewing and navigating code. Each tool has its strengths and I pick whatever fits the task.',
   // TALON topic
   'what does talon build':'TALON Lab builds mission-critical tech that saves lives. We deploy small LLMs on edge devices, so AI runs in real time even where there\'s no cloud connectivity. When the stakes are that high, every decision counts.',
   'small LLMs':'At TALON we focus on small LLMs that run on edge devices, designed for disconnected environments where lives depend on real-time inference. It\'s a completely different challenge from scaling up. Every parameter has to earn its place.',
@@ -627,8 +731,9 @@ function fakeStream(text,textEl,log){
 }
 
 async function streamAI(message){
-  // Hide any previous project overlay on new message
+  // Hide any previous overlays on new message
   hideProjects();
+  hideResume();
 
   var log=document.getElementById('chat-log');
   log.classList.add('visible');
@@ -638,8 +743,9 @@ async function streamAI(message){
   log.appendChild(aiMsg);log.scrollTop=log.scrollHeight;
   var textEl=aiMsg.querySelector('.ai-text');
 
-  // Detect if asking about projects
+  // Detect if asking about projects or resume
   var askingProjects=isProjectQuestion(message);
+  var askingResume=isResumeQuestion(message);
 
   // Check for canned response first
   var cannedKey=getCannedKey(message);
@@ -688,7 +794,8 @@ async function streamAI(message){
   updateSuggestions(pickSuggestions(full,message));
 
   // Show project cards if relevant
-  if(askingProjects||isProjectQuestion(full))showProjects();
+  if(askingProjects)showProjects();
+  if(askingResume)showResume();
 
   return full.trim();
 }
