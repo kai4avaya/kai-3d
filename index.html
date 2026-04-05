@@ -11,7 +11,7 @@
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:#0a0a0f;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,0.02) 0px,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 4px);color:#e0ddd4;font-family:'JetBrains Mono',monospace;overflow:hidden;height:100vh;display:flex;flex-direction:column}
   #viewport{flex:1;position:relative;overflow:hidden}
-  #fx-canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;pointer-events:none}
+  #fx-canvas{position:absolute;top:0;left:0;z-index:5;pointer-events:none}
   /* Floating header */
   #header{position:absolute;top:0;left:0;right:0;z-index:150;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;background:transparent;pointer-events:none}
   #header>*{pointer-events:auto}
@@ -350,7 +350,7 @@ function init(){
   });
   ren.domElement.addEventListener('wheel',function(e){di*=(1+e.deltaY*.001);di=Math.max(.3,Math.min(8,di));e.preventDefault()},{passive:false});
   var pr=Math.min(devicePixelRatio,prMax),w=ct.clientWidth,h=ct.clientHeight;
-  rt=new THREE.WebGLRenderTarget(w*pr,h*pr);
+  rt=new THREE.WebGLRenderTarget(Math.floor(w*pr),Math.floor(h*pr));
   var mp=new THREE.Vector2(0.5,0.5);
   normalMat=new THREE.ShaderMaterial({uniforms:{tD:{value:rt.texture},t:{value:0},fx:{value:.5},mPos:{value:mp}},vertexShader:ppVert,fragmentShader:normalFrag,depthTest:false});
   glitchMat=new THREE.ShaderMaterial({uniforms:{tD:{value:rt.texture},t:{value:0},fx:{value:.5},talkMix:{value:0},mPos:{value:mp}},vertexShader:ppVert,fragmentShader:glitchFrag,depthTest:false});
@@ -369,21 +369,26 @@ function init(){
     ren.setRenderTarget(rt);ren.render(scene,cam);ren.setRenderTarget(null);ren.render(fsc,fcam);
     if(fxMode==='ascii')renderASCII();
   })();
-  window.addEventListener('resize',function(){var c=document.getElementById('viewport'),w=c.clientWidth,h=c.clientHeight,p=Math.min(devicePixelRatio,prMax);cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);rt.setSize(w*p,h*p);engraveMat.uniforms.res.value.set(w*p,h*p);initFC();});
+  window.addEventListener('resize',function(){var c=document.getElementById('viewport'),w=c.clientWidth,h=c.clientHeight,p=Math.min(devicePixelRatio,prMax);cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);var rw=Math.floor(w*p),rh=Math.floor(h*p);rt.setSize(rw,rh);engraveMat.uniforms.res.value.set(rw,rh);initFC();});
   var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';s.onload=function(){window._gl=true;autoLoadGLB();};document.head.appendChild(s);
   initFC();
 }
 
 // === ASCII with sprinkle reveal + model-only mouse distortion ===
-var fxC,fxX,pxB=null,aC=' .,:-~=+*!&#%$@';
-function initFC(){fxC=document.getElementById('fx-canvas');var vp=document.getElementById('viewport');fxC.width=vp.clientWidth;fxC.height=vp.clientHeight;fxX=fxC.getContext('2d');pxB=null;}
+var fxC,fxX,pxB=null,aC=' .,:-~=+*!&#%$@',asciiSkip=0;
+function initFC(){fxC=document.getElementById('fx-canvas');var vp=document.getElementById('viewport');var cw=vp.clientWidth,ch=vp.clientHeight;fxC.width=cw;fxC.height=ch;fxC.style.width=cw+'px';fxC.style.height=ch+'px';fxX=fxC.getContext('2d');pxB=null;}
 function rP(){var w=rt.width,h=rt.height;if(!pxB||pxB.length!==w*h*4)pxB=new Uint8Array(w*h*4);ren.setRenderTarget(rt);ren.readRenderTargetPixels(rt,0,0,w,h,pxB);ren.setRenderTarget(null);}
 function cHash(c,r){var n=c*374761393+r*668265263;n=(n^(n>>13))*1274126177;return((n^(n>>16))&0x7fffffff)/0x7fffffff;}
 function renderASCII(){
   if(!fxX||fxMode!=='ascii')return;
+  if(asciiSkip>0){asciiSkip--;return;}
+  // Sync canvas size to viewport every frame
+  var vp=document.getElementById('viewport');
+  var vpW=vp.clientWidth,vpH=vp.clientHeight;
+  if(fxC.width!==vpW||fxC.height!==vpH){fxC.width=vpW;fxC.height=vpH;fxC.style.width=vpW+'px';fxC.style.height=vpH+'px';fxX=fxC.getContext('2d');pxB=null;}
   var w=fxC.width,h=fxC.height;fxX.fillStyle=isDark?'#0a0a0f':'#f0ede8';fxX.fillRect(0,0,w,h);
   rP();var gW=rt.width,gH=rt.height;
-  if(!pxB||pxB.length!==gW*gH*4)return;
+  if(!pxB||pxB.length!==gW*gH*4||gW<2||gH<2)return;
   var mobAscii=window.innerWidth<=640;
   var cW=Math.max(3,Math.round((mobAscii?6:4)+(1-fxAmount)*(mobAscii?5:4))),cH=Math.max(5,Math.round(cW*1.8));
   var cols=Math.floor(w/cW),rows=Math.floor(h/cH);
