@@ -393,6 +393,7 @@ function stopSpeaking(){
   if(fadeTimer){clearTimeout(fadeTimer);fadeTimer=null;}
   toIdle();
   showStopBtn(false);
+  updateUI();
   setBusy(false);
 }
 
@@ -405,8 +406,8 @@ async function cfTTS(text){
   return new Promise(function(ok,no){
     ttsAudio=new Audio(url);
     var talkStarted=false;ttsAudio.ontimeupdate=function(){if(!talkStarted&&ttsAudio.currentTime>0.05){talkStarted=true;toTalk();}};
-    ttsAudio.onended=function(){URL.revokeObjectURL(url);ttsAudio=null;isSpeaking=false;showStopBtn(false);toIdle();ok();};
-    ttsAudio.onerror=function(){URL.revokeObjectURL(url);ttsAudio=null;isSpeaking=false;showStopBtn(false);toIdle();no(new Error('play'));};
+    ttsAudio.onended=function(){URL.revokeObjectURL(url);ttsAudio=null;isSpeaking=false;showStopBtn(false);updateUI();toIdle();ok();};
+    ttsAudio.onerror=function(){URL.revokeObjectURL(url);ttsAudio=null;isSpeaking=false;showStopBtn(false);updateUI();toIdle();no(new Error('play'));};
     ttsAudio.play();
   });
 }
@@ -424,14 +425,14 @@ function pickBestVoice(){
 }
 
 function fbTTS(t){
-  if(!speechSynthesis){console.log('[TTS-FB] no speechSynthesis');toIdle();isSpeaking=false;showStopBtn(false);return;}
+  if(!speechSynthesis){console.log('[TTS-FB] no speechSynthesis');isSpeaking=false;showStopBtn(false);updateUI();toIdle();return;}
   speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.rate=0.95;
   var voice=pickBestVoice();
   console.log('[TTS-FB] voices available:',cachedVoices.length,'selected:',voice?voice.name:'default');
   if(voice)u.voice=voice;
   u.onstart=function(){console.log('[TTS-FB] speaking started');toTalk();};
-  u.onend=function(){console.log('[TTS-FB] speaking ended');clearTimeout(fadeTimer);isSpeaking=false;showStopBtn(false);toIdle();};
-  u.onerror=function(e){console.warn('[TTS-FB] error:',e);clearTimeout(fadeTimer);isSpeaking=false;showStopBtn(false);toIdle();};
+  u.onend=function(){console.log('[TTS-FB] speaking ended');clearTimeout(fadeTimer);isSpeaking=false;showStopBtn(false);updateUI();toIdle();};
+  u.onerror=function(e){console.warn('[TTS-FB] error:',e);clearTimeout(fadeTimer);isSpeaking=false;showStopBtn(false);updateUI();toIdle();};
   speechSynthesis.speak(u);
 }
 
@@ -548,12 +549,12 @@ var CANNED={
   // Initial suggestions
   'tell me about yourself':'Hey, I\'m Kai Kleinbard. I\'m an AI/ML Tech Lead at TALON Lab building mission-critical tech on edge devices. I also do research at Harvard\'s Edge Computing Lab and come from a background in education technology where I founded bodyLITERATE, a company supporting neurodivergent learners. I\'ve also done some work as a dancer and choreographer along the way. Want to connect? Find me at linkedin.com/in/kai-kleinbard.',
   'what are you working on':'I\'m leading a team at TALON Lab right now, building mission-critical software that saves lives with small LLMs running on edge devices. High-stakes, high-impact work at the intersection of AI and the real world.',
-  'what have you built':'Three projects I\'m proud of: AI Engineering, an open-access TinyML curriculum to educate a million engineers globally. Arch-Scholar, a multi-agent AI system for scholarly paper review out of Harvard. And KAIK.SPACE, a WebGL experiment lab for browser-based 3D graphics. Want to build something together? Reach out at linkedin.com/in/kai-kleinbard.',
+  'what have you built':'Three projects I\'m proud of: AI Engineering, an open-access TinyML curriculum to educate a million engineers globally. Arch-Scholar, a multi-agent AI system for scholarly paper review out of Harvard. And KAIK.SPACE, a WebGL experiment lab for browser-based 3D graphics. Want to get in touch? Reach out at linkedin.com/in/kai-kleinbard.',
   'what\'s on your mind today':'Lately I\'ve been thinking a lot about making AI more accessible, not just the tools themselves but the education around them. That\'s the thread connecting the AI Engineering initiative and my work with bodyLITERATE.',
   'give me a hot take':'Small LLMs on edge devices are going to matter more than massive cloud models for most real-world use cases. Not every problem needs a billion parameters. Sometimes you just need something that runs offline and saves a life.',
   // AI topic
   'explain how you built this':'So this site is actually me as a 3D avatar. I started by generating a 3D model of myself using an AI model, then brought it into Blender where I rigged it with bones for talking and body movement. I set up some simple animation frames for idle and speaking states, exported it as a GLB, and dropped it straight into a single HTML file. The rendering runs on Three.js with custom WebGL shaders for the ASCII, glitch, and engrave effects. The whole thing, including the AI chat and text-to-speech, is one file with no build step.',
-  'other projects you built':'In addition to recent projects — AI Engineering, a nonprofit education initiative teaching AI systems engineering to underserved communities; Arch-Scholar, an agentic academic paper reviewer; and KAIK.SPACE, my digital embodied portfolio — I\'ve shipped full-stack apps with Langchain and other AI frameworks. I\'m comfortable building in NextJS, GoLang, and Node.js. I\'ve fine-tuned GPT models through various freelance projects and co-founded StudyDuck, building a full NLP pipeline on AWS. I\'ve also built fully WCAG-compliant data visualization dashboards with d3.js and other visualization tools. I\'m constantly learning by building. Want to build something together? Message me at linkedin.com/in/kai-kleinbard.',
+  'other projects you built':'In addition to recent projects — AI Engineering, a nonprofit education initiative teaching AI systems engineering to underserved communities; Arch-Scholar, an agentic academic paper reviewer; and KAIK.SPACE, my digital embodied portfolio — I\'ve shipped full-stack apps with Langchain and other AI frameworks. I\'m comfortable building in NextJS, GoLang, and Node.js. I\'ve fine-tuned GPT models through various freelance projects and co-founded StudyDuck, building a full NLP pipeline on AWS. I\'ve also built fully WCAG-compliant data visualization dashboards with d3.js and other visualization tools. I\'m constantly learning by building. Want to get in touch? Message me at linkedin.com/in/kai-kleinbard.',
   'favorite ai tools':'Claude Code is my daily driver. The agentic workflow just clicks with how I think. Gemini CLI for quick iterations, Mermaid AI for diagramming architecture visually. Honestly, I also love any platform with a generous free tier. You\'d be surprised how much you can ship without spending a dime if you\'re resourceful.',
   // TALON topic
   'what does talon build':'TALON Lab builds mission-critical tech that saves lives. We deploy small LLMs on edge devices, so AI runs in real time even where there\'s no cloud connectivity. When the stakes are that high, every decision counts.',
@@ -599,6 +600,13 @@ function getCannedKey(message){
     if(hits>=words.length*0.6)return key;
   }
   return null;
+}
+
+function linkify(text){
+  return text.replace(/(https?:\/\/[^\s,)]+|(?:linkedin\.com|kaik\.space|mlsysbook\.ai|community\.mlsysbook\.ai)[^\s,)]*)/gi,function(url){
+    var href=url.startsWith('http')?url:'https://'+url;
+    return '<a href="'+href+'" target="_blank" rel="noopener" style="color:#6a9fd8;text-decoration:underline">'+url+'</a>';
+  });
 }
 
 function fakeStream(text,textEl,log){
@@ -674,7 +682,7 @@ async function streamAI(message){
   }
 
   var cur=aiMsg.querySelector('.ai-cursor');if(cur)cur.remove();
-  textEl.textContent=full.trim();
+  textEl.innerHTML=linkify(full.trim());
   updateSuggestions(pickSuggestions(full,message));
 
   // Show project cards if relevant
@@ -687,10 +695,14 @@ var isBusy=false;
 
 function setBusy(b){
   isBusy=b;
-  document.querySelectorAll('.suggestion').forEach(function(s){s.style.pointerEvents=b?'none':'auto';s.style.opacity=b?'0.4':'1';});
-  document.getElementById('mic-btn').style.pointerEvents=b&&!isSpeaking?'none':'auto';
-  document.getElementById('mic-btn').style.opacity=b&&!isSpeaking?'0.4':'1';
-  document.getElementById('chat-input').disabled=b;
+  updateUI();
+}
+function updateUI(){
+  var blocked=isBusy||isSpeaking;
+  document.querySelectorAll('.suggestion').forEach(function(s){s.style.pointerEvents=blocked?'none':'auto';s.style.opacity=blocked?'0.4':'1';});
+  document.getElementById('mic-btn').style.pointerEvents=blocked?'none':'auto';
+  document.getElementById('mic-btn').style.opacity=blocked?'0.4':'1';
+  document.getElementById('chat-input').disabled=blocked;
 }
 
 function sendOrStop(){
@@ -710,10 +722,10 @@ async function sendMessage(){
   if(!speakText.trim()){setBusy(false);return;}
   isSpeaking=true;
   showStopBtn(true);
+  updateUI();
   try{await cfTTS(speakText);console.log('[TTS] CF TTS succeeded');setBusy(false);return;}catch(e){console.warn('[TTS] CF TTS failed, falling back to Web Speech:',e);}
   console.log('[TTS] calling fbTTS');
   fbTTS(speakText);
-  setBusy(false);
 }
 
 // === MIC ===
