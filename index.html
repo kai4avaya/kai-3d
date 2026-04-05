@@ -248,7 +248,7 @@
         <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 00-.48-.41h-3.84a.48.48 0 00-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z"/></svg>
       </div>
       <div id="settings-drawer">
-        <div class="s-row"><label>fx</label><input type="range" min="0" max="100" value="50" oninput="fxAmount=this.value/100"></div>
+        <div class="s-row"><label>fx</label><input id="fx-slider" type="range" min="0" max="100" value="50" oninput="fxAmount=this.value/100"></div>
         <div class="s-row"><label>light</label><input type="range" min="20" max="250" value="100" oninput="setL(this.value)"></div>
         <div class="s-row"><label>voice</label><select onchange="ttsVoice=this.value"><option value="orion">orion</option><option value="arcas">arcas</option><option value="helios">helios</option><option value="orpheus">orpheus</option><option value="angus">angus</option><option value="perseus">perseus</option><option value="stella">stella</option><option value="luna">luna</option><option value="athena">athena</option><option value="hera">hera</option></select></div>
       </div>
@@ -300,7 +300,7 @@ function toggleTheme(){
   if(scene)scene.background=new THREE.Color(isDark?0x0a0a0f:0xf0ede8);
 }
 
-var fxAmount=0.5,fxMode='ascii';
+var fxAmount=window.innerWidth<=640?1.0:0.5,fxMode='ascii';
 var scene,cam,ren,clock=new THREE.Clock();
 var mixer,idleAct,talkAct,talking=false;
 var rt,fsc,fcam,ambL,keyL,fillL;
@@ -338,12 +338,12 @@ function init(){
   keyL=new THREE.DirectionalLight(0xfff0e0,1.0);keyL.position.set(1,2,3);scene.add(keyL);
   fillL=new THREE.DirectionalLight(0xe0eeff,0.5);fillL.position.set(-2,1,0);scene.add(fillL);
   scene.add(new THREE.DirectionalLight(0xffd0a0,0.3)).position.set(0,1,-2);
-  var dn=false,px=0,py=0,th=0,ph=Math.PI/2;
+  var px=0,py=0,th=0,ph=Math.PI/2;
   di=1.6;tg=new THREE.Vector3(0,0.88,0);
   ren.domElement.addEventListener('pointerdown',function(e){dn=true;px=e.clientX;py=e.clientY});
   window.addEventListener('pointerup',function(){dn=false});
   window.addEventListener('pointermove',function(e){
-    if(dn){th-=(e.clientX-px)*.005;ph-=(e.clientY-py)*.005;ph=Math.max(.1,Math.min(Math.PI-.1,ph));px=e.clientX;py=e.clientY;}
+    if(dn){var spd=isMob?.01:.005;th-=(e.clientX-px)*spd;ph-=(e.clientY-py)*spd;ph=Math.max(.1,Math.min(Math.PI-.1,ph));px=e.clientX;py=e.clientY;}
     mouseX=(e.clientX/window.innerWidth)*2-1;mouseY=(e.clientY/window.innerHeight)*2-1;
     var vpR=document.getElementById('viewport').getBoundingClientRect();
     mouseUvX=(e.clientX-vpR.left)/vpR.width;mouseUvY=1.0-(e.clientY-vpR.top)/vpR.height;
@@ -358,8 +358,9 @@ function init(){
   ppMesh=new THREE.Mesh(new THREE.PlaneGeometry(2,2),normalMat);
   fsc=new THREE.Scene();fsc.add(ppMesh);fcam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
   setMode('ascii');
+  var frameN=0;
   (function frame(){
-    requestAnimationFrame(frame);if(mixer)mixer.update(clock.getDelta());
+    requestAnimationFrame(frame);frameN++;if(mixer)mixer.update(clock.getDelta());
     if(modelRoot){currentRotY+=(mouseX*0.08-currentRotY)*0.03;currentRotX+=(-mouseY*0.04-currentRotX)*0.03;modelRoot.rotation.y=Math.PI+currentRotY;modelRoot.rotation.x=currentRotX;}
     cam.position.set(tg.x+di*Math.sin(ph)*Math.sin(th),tg.y+di*Math.cos(ph),tg.z+di*Math.sin(ph)*Math.cos(th));cam.lookAt(tg);
     glitchTalkMix+=((talking?1:0)-glitchTalkMix)*0.08;mp.set(mouseUvX,mouseUvY);
@@ -367,21 +368,21 @@ function init(){
     else if(fxMode==='engrave'){ppMesh.material=engraveMat;engraveMat.uniforms.t.value=clock.elapsedTime;engraveMat.uniforms.fx.value=fxAmount;}
     else{ppMesh.material=normalMat;normalMat.uniforms.t.value=clock.elapsedTime;normalMat.uniforms.fx.value=fxAmount;}
     ren.setRenderTarget(rt);ren.render(scene,cam);ren.setRenderTarget(null);ren.render(fsc,fcam);
-    if(fxMode==='ascii')renderASCII();
+    if(fxMode==='ascii'){if(isMob&&dn&&frameN%4!==0){/* reuse last ascii frame */}else{renderASCII();}}
   })();
   window.addEventListener('resize',function(){var c=document.getElementById('viewport'),w=c.clientWidth,h=c.clientHeight,p=Math.min(devicePixelRatio,prMax);cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);var rw=Math.floor(w*p),rh=Math.floor(h*p);rt.setSize(rw,rh);engraveMat.uniforms.res.value.set(rw,rh);initFC();});
   var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';s.onload=function(){window._gl=true;autoLoadGLB();};document.head.appendChild(s);
   initFC();
+  if(isMob){var fxS=document.getElementById('fx-slider');if(fxS)fxS.value=100;}
 }
 
 // === ASCII with sprinkle reveal + model-only mouse distortion ===
-var fxC,fxX,pxB=null,aC=' .,:-~=+*!&#%$@',asciiSkip=0;
+var fxC,fxX,pxB=null,aC=' .,:-~=+*!&#%$@',dn=false;
 function initFC(){fxC=document.getElementById('fx-canvas');var vp=document.getElementById('viewport');var cw=vp.clientWidth,ch=vp.clientHeight;fxC.width=cw;fxC.height=ch;fxC.style.width=cw+'px';fxC.style.height=ch+'px';fxX=fxC.getContext('2d');pxB=null;}
 function rP(){var w=rt.width,h=rt.height;if(!pxB||pxB.length!==w*h*4)pxB=new Uint8Array(w*h*4);ren.setRenderTarget(rt);ren.readRenderTargetPixels(rt,0,0,w,h,pxB);ren.setRenderTarget(null);}
 function cHash(c,r){var n=c*374761393+r*668265263;n=(n^(n>>13))*1274126177;return((n^(n>>16))&0x7fffffff)/0x7fffffff;}
 function renderASCII(){
   if(!fxX||fxMode!=='ascii')return;
-  if(asciiSkip>0){asciiSkip--;return;}
   // Sync canvas size to viewport every frame
   var vp=document.getElementById('viewport');
   var vpW=vp.clientWidth,vpH=vp.clientHeight;
@@ -406,12 +407,14 @@ function renderASCII(){
     var r=pxB[idx],g=pxB[idx+1],b=pxB[idx+2],lum=(0.299*r+0.587*g+0.114*b)/255;
     if(isDark){if(lum<0.02)continue;}else{if(lum>0.90)continue;lum=1.0-lum;}
     var ci=Math.min(nC-1,Math.max(0,Math.floor(lum*(nC-1))));
-    var dx=px-mCx,dy=py-mCy,md=Math.sqrt(dx*dx+dy*dy);
     var cr,cg,cb;
     if(isDark){cr=Math.floor(8+lum*75);cg=Math.floor(30+lum*155);cb=Math.floor(80+lum*175);}
     else{var k=Math.floor(50+lum*30);cr=k;cg=k;cb=k;}
-    if(md<mR){var mf=Math.pow(1-md/mR,2);ci=Math.max(0,Math.min(nC-1,ci+Math.floor((Math.random()-.5)*mf*fxAmount*8)));var bb=mf*fxAmount*.6;cr=Math.min(255,cr+Math.floor(bb*180));cg=Math.min(255,cg+Math.floor(bb*140));cb=Math.min(255,cb+Math.floor(bb*200));}
-    if(rPr<1){var dN2=Math.sqrt((px-cx)*(px-cx)+(py-cy)*(py-cy))/mD;var age=(rPr-(dN2*0.3+cHash(col,row)*0.7))*8;if(age>0&&age<1){cr=Math.min(255,cr+Math.floor((1-age)*150));cg=Math.min(255,cg+Math.floor((1-age)*180));cb=Math.min(255,cb+Math.floor((1-age)*220));}}
+    if(!mobAscii){
+      var dx=px-mCx,dy=py-mCy,md=Math.sqrt(dx*dx+dy*dy);
+      if(md<mR){var mf=Math.pow(1-md/mR,2);ci=Math.max(0,Math.min(nC-1,ci+Math.floor((Math.random()-.5)*mf*fxAmount*8)));var bb=mf*fxAmount*.6;cr=Math.min(255,cr+Math.floor(bb*180));cg=Math.min(255,cg+Math.floor(bb*140));cb=Math.min(255,cb+Math.floor(bb*200));}
+      if(rPr<1){var dN2=Math.sqrt((px-cx)*(px-cx)+(py-cy)*(py-cy))/mD;var age=(rPr-(dN2*0.3+cHash(col,row)*0.7))*8;if(age>0&&age<1){cr=Math.min(255,cr+Math.floor((1-age)*150));cg=Math.min(255,cg+Math.floor((1-age)*180));cb=Math.min(255,cb+Math.floor((1-age)*220));}}
+    }
     fxX.fillStyle='rgb('+cr+','+cg+','+cb+')';fxX.fillText(aC[ci],col*cW,row*cH);
   }}
   fxX.strokeStyle=isDark?'rgba(30,70,140,0.05)':'rgba(80,60,40,0.06)';fxX.lineWidth=1;
