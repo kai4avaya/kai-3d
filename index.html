@@ -604,8 +604,10 @@ function getCannedKey(message){
 
 function linkify(text){
   return text.replace(/(https?:\/\/[^\s,)]+|(?:linkedin\.com|kaik\.space|mlsysbook\.ai|community\.mlsysbook\.ai)[^\s,)]*)/gi,function(url){
+    var trail='';
+    while(url.length>1&&/[.,;:!?]$/.test(url)){trail=url.slice(-1)+trail;url=url.slice(0,-1);}
     var href=url.startsWith('http')?url:'https://'+url;
-    return '<a href="'+href+'" target="_blank" rel="noopener" style="color:#6a9fd8;text-decoration:underline">'+url+'</a>';
+    return '<a href="'+href+'" target="_blank" rel="noopener" style="color:#6a9fd8;text-decoration:underline">'+url+'</a>'+trail;
   });
 }
 
